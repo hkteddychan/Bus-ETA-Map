@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>香港巴士到站地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; }
+  #map { width: 100vw; height: 100vh; }
+  
+  .controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 320px;
+  }
+  
+  .tabs {
+    display: flex;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  
+  .tab {
+    padding: 10px 16px;
+    cursor: pointer;
+    border: none;
+    background: #f0f0f0;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  
+  .tab.active { background: #3498db; color: white; }
+  .tab:hover:not(.active) { background: #ddd; }
+  
+  .search-box {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 10px;
+  }
+  
+  .search-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .autocomplete {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1001;
+    width: calc(100% - 20px);
+    margin-left: 10px;
+  }
+  
+  .autocomplete-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+  }
+  
+  .autocomplete-item:hover { background: #f5f5f5; }
+  .autocomplete-item .name-tc { font-weight: 600; }
+  .autocomplete-item .name-en { color: #666; font-size: 12px; }
+  
+  .filter-box {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 10px;
+  }
+  
+  .filter-box label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 5px;
+    display: block;
+  }
+  
+  .filter-box select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .gps-btn {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 10px 16px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .gps-btn:hover { background: #f5f5f5; }
+  .gps-btn.active { background: #3498db; color: white; }
+  
+  .legend {
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 12px 15px;
+    font-size: 13px;
+  }
+  
+  .legend-title { font-weight: 700; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  
+  .popup-content { min-width: 200px; }
+  .popup-content h3 { margin-bottom: 8px; font-size: 15px; }
+  .popup-content .name-en { color: #666; font-size: 13px; margin-bottom: 10px; }
+  .popup-content .routes-title { font-weight: 600; margin: 10px 0 5px; font-size: 13px; color: #555; }
+  .popup-content .route-item { padding: 4px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+  .popup-content .route-item:last-child { border-bottom: none; }
+  .popup-content .route-code { font-weight: 700; color: #333; }
+  .popup-content .route-dest { color: #666; margin-left: 5px; }
+  .popup-content .more-routes { color: #3498db; font-size: 12px; padding-top: 5px; }
+  .popup-content .eta-section { margin-top: 12px; border-top: 1px solid #ddd; padding-top: 10px; }
+  .popup-content .eta-title { font-weight: 600; font-size: 13px; color: #555; }
+  .popup-content .eta-item { padding: 3px 0; font-size: 13px; }
+  .popup-content .eta-loading { color: #999; font-size: 12px; }
+  .popup-content .eta-error { color: #e74c3c; font-size: 12px; }
+  .popup-content .no-eta { color: #999; font-size: 12px; }
+  
+  .loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .loading-text { font-size: 16px; color: #333; }
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">載入巴士數據中...</div>
+</div>
+
+<div class="controls">
+  <div class="tabs">
+    <button class="tab active" data-op="kmb">九巴</button>
+    <button class="tab" data-op="gmb">小巴</button>
+    <button class="tab" data-op="mtr">港鐵</button>
+    <button class="tab" data-op="all">全部</button>
+  </div>
+  
+  <div class="search-box">
+    <input type="text" id="search" placeholder="搜尋巴士站..." autocomplete="off">
+    <div id="autocomplete" class="autocomplete"></div>
+  </div>
+  
+  <div class="filter-box" id="district-filter" style="display:none;">
+    <label>地區篩選</label>
+    <select id="district">
+      <option value="">全部地區</option>
+      <option value="中西區">中西區</option>
+      <option value="灣仔">灣仔</option>
+      <option value="東區">東區</option>
+      <option value="南區">南區</option>
+      <option value="油尖旺">油尖旺</option>
+      <option value="深水埗">深水埗</option>
+      <option value="九龍城">九龍城</option>
+      <option value="黃大仙">黃大仙</option>
+      <option value="觀塘">觀塘</option>
+      <option value="荃灣">荃灣</option>
+      <option value="屯門">屯門</option>
+      <option value="元朗">元朗</option>
+      <option value="北區">北區</option>
+      <option value="大埔">大埔</option>
+      <option value="沙田">沙田</option>
+      <option value="西貢">西貢</option>
+      <option value="葵青">葵青</option>
+      <option value="離島">離島</option>
+    </select>
+  </div>
+  
+  <button class="gps-btn" id="gps-btn">📍 顯示我的位置</button>
+</div>
+
+<div id="map"></div>
+
+<div class="legend" id="legend">
+  <div class="legend-title">圖例</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 九巴 <span id="kmb-count">(0)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#27ae60;"></span> 小巴 <span id="gmb-count">(0)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> 港鐵 <span id="mtr-count">(0)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#e67e22;"></span> 龍運 <span id="lwb-count">(0)</span></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script>
+// ==================== CONFIG ====================
+const COLORS = {
+  kmb: '#e74c3c',
+  gmb: '#27ae60',
+  mtr: '#3498db',
+  lwb: '#e67e22'
+};
+
+const HK_CENTER = [22.35, 114.17];
+const DEFAULT_ZOOM = 11;
+
+// District bounding boxes for HK 18 districts
+const DISTRICT_BBOX = {
+  '中西區': { latMin: 22.26, latMax: 22.30, lngMin: 114.13, lngMax: 114.18 },
+  '灣仔': { latMin: 22.26, latMax: 22.29, lngMin: 114.16, lngMax: 114.20 },
+  '東區': { latMin: 22.24, latMax: 22.32, lngMin: 114.18, lngMax: 114.25 },
+  '南區': { latMin: 22.20, latMax: 22.28, lngMin: 114.12, lngMax: 114.22 },
+  '油尖旺': { latMin: 22.28, latMax: 22.31, lngMin: 114.16, lngMax: 114.20 },
+  '深水埗': { latMin: 22.32, latMax: 22.35, lngMin: 114.15, lngMax: 114.18 },
+  '九龍城': { latMin: 22.32, latMax: 22.36, lngMin: 114.17, lngMax: 114.21 },
+  '黃大仙': { latMin: 22.33, latMax: 22.37, lngMin: 114.19, lngMax: 114.23 },
+  '觀塘': { latMin: 22.29, latMax: 22.36, lngMin: 114.21, lngMax: 114.27 },
+  '荃灣': { latMin: 22.35, latMax: 22.42, lngMin: 114.08, lngMax: 114.15 },
+  '屯門': { latMin: 22.36, latMax: 22.42, lngMin: 113.95, lngMax: 114.05 },
+  '元朗': { latMin: 22.43, latMax: 22.50, lngMin: 113.95, lngMax: 114.10 },
+  '北區': { latMin: 22.48, latMax: 22.58, lngMin: 114.10, lngMax: 114.25 },
+  '大埔': { latMin: 22.42, latMax: 22.52, lngMin: 114.15, lngMax: 114.25 },
+  '沙田': { latMin: 22.37, latMax: 22.45, lngMin: 114.17, lngMax: 114.25 },
+  '西貢': { latMin: 22.28, latMax: 22.40, lngMin: 114.23, lngMax: 114.35 },
+  '葵青': { latMin: 22.34, latMax: 22.42, lngMin: 114.12, lngMax: 114.18 },
+  '離島': { latMin: 22.15, latMax: 22.32, lngMin: 113.82, lngMax: 114.40 }
+};
+
+// ==================== STATE ====================
+let map;
+let kmbMarkers, gmbMarkers, mtrMarkers, lwbMarkers;
+let kmbClusterGroup;
+let currentOperator = 'kmb';
+let kmbData = null, mtrData = null, gmbData = null;
+let stopRoutesIndex = { kmb: {}, lwb: {}, mtr: {} };
+let etaCache = {};
+let etaRefreshTimers = {};
+let userLocation = null;
+let nearestMarkers = [];
+
+// ==================== INIT ====================
+async function init() {
+  map = L.map('map').setView(HK_CENTER, DEFAULT_ZOOM);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Initialize marker groups
+  kmbClusterGroup = L.markerClusterGroup({ 
+    maxClusterRadius: 50, 
+    spiderfyOnMaxZoom: true, 
+    showCoverageOnHover: false 
+  });
+  gmbMarkers = L.layerGroup();
+  mtrMarkers = L.layerGroup();
+  lwbMarkers = L.layerGroup();
+
+  map.addLayer(kmbClusterGroup);
+  map.addLayer(gmbMarkers);
+  map.addLayer(mtrMarkers);
+  map.addLayer(lwbMarkers);
+
+  // Load data
+  try {
+    const [kmbRes, mtrRes, gmbRes] = await Promise.all([
+      fetch('./kmb_data.json'),
+      fetch('./mtr_data.json'),
+      fetch('./gmb_data.json')
+    ]);
+    
+    if (!kmbRes.ok) throw new Error('KMB data failed');
+    if (!mtrRes.ok) throw new Error('MTR data failed');
+    if (!gmbRes.ok) throw new Error('GMB data failed');
+    
+    kmbData = await kmbRes.json();
+    mtrData = await mtrRes.json();
+    gmbData = await gmbRes.json();
+    
+    buildStopRoutesIndex();
+    loadOperatorStops('kmb');
+    updateLegend();
+    
+  } catch (err) {
+    console.error('Data load error:', err);
+    alert('數據載入失敗，請刷新頁面重試');
+  }
+
+  setupEventListeners();
+  document.getElementById('loading').style.display = 'none';
+}
+
+// ==================== INDEX BUILDING ====================
+function buildStopRoutesIndex() {
+  // KMB route-stops
+  if (kmbData.kmb_route_stops) {
+    kmbData.kmb_route_stops.forEach(rs => {
+      if (!stopRoutesIndex.kmb[rs.stop]) stopRoutesIndex.kmb[rs.stop] = [];
+      const routeKey = `${rs.route}|${rs.bound}|${rs.service_type}`;
+      if (!stopRoutesIndex.kmb[rs.stop].find(r => r.key === routeKey)) {
+        const routeInfo = kmbData.kmb_routes.find(r => r.route === rs.route && r.bound === rs.bound && r.service_type === rs.service_type);
+        stopRoutesIndex.kmb[rs.stop].push({
+          key: routeKey,
+          route: rs.route,
+          bound: rs.bound,
+          serviceType: rs.service_type,
+          dest_tc: routeInfo ? routeInfo.dest_tc : '',
+          dest_en: routeInfo ? routeInfo.dest_en : ''
+        });
+      }
+    });
+  }
+
+  // LWB route-stops
+  if (kmbData.lwb_route_stops) {
+    kmbData.lwb_route_stops.forEach(rs => {
+      if (!stopRoutesIndex.lwb[rs.stop]) stopRoutesIndex.lwb[rs.stop] = [];
+      const routeKey = `${rs.route}|${rs.bound}|${rs.service_type}`;
+      if (!stopRoutesIndex.lwb[rs.stop].find(r => r.key === routeKey)) {
+        const routeInfo = kmbData.lwb_routes.find(r => r.route === rs.route && r.bound === rs.bound && r.service_type === rs.service_type);
+        stopRoutesIndex.lwb[rs.stop].push({
+          key: routeKey,
+          route: rs.route,
+          bound: rs.bound,
+          serviceType: rs.service_type,
+          dest_tc: routeInfo ? routeInfo.dest_tc : '',
+          dest_en: routeInfo ? routeInfo.dest_en : ''
+        });
+      }
+    });
+  }
+
+  // MTR stops (from routes data)
+  if (mtrData && mtrData.routes) {
+    mtrData.routes.forEach(route => {
+      if (route.stops) {
+        route.stops.forEach(stop => {
+          if (!stopRoutesIndex.mtr[stop.STATION_ID]) stopRoutesIndex.mtr[stop.STATION_ID] = [];
+          if (!stopRoutesIndex.mtr[stop.STATION_ID].find(r => r.route === route.ROUTE_ID)) {
+            stopRoutesIndex.mtr[stop.STATION_ID].push({
+              route: route.ROUTE_ID,
+              route_name_tc: route.ROUTE_NAME_CHI || route.ROUTE_ID,
+              route_name_en: route.ROUTE_NAME_ENG || route.ROUTE_ID
+            });
+          }
+        });
+      }
+    });
+  }
+}
+
+// ==================== STOP LOADING ====================
+function loadOperatorStops(op) {
+  // Clear existing
+  kmbClusterGroup.clearLayers();
+  gmbMarkers.clearLayers();
+  mtrMarkers.clearLayers();
+  lwbMarkers.clearLayers();
+
+  const district = document.getElementById('district').value;
+  const districtFilter = district ? DISTRICT_BBOX[district] : null;
+
+  if (op === 'kmb' || op === 'all') {
+    if (kmbData && kmbData.kmb_stops) {
+      kmbData.kmb_stops.forEach(stop => {
+        if (districtFilter && !inDistrict(stop.lat, stop.long, districtFilter)) return;
+        const marker = createCircleMarker(stop.lat, stop.long, 'kmb', stop);
+        marker.on('click', () => showPopup(marker, stop, 'kmb'));
+        kmbClusterGroup.addLayer(marker);
+      });
+    }
+  }
+
+  if (op === 'kmb' || op === 'all') {
+    if (kmbData && kmbData.lwb_stops) {
+      kmbData.lwb_stops.forEach(stop => {
+        if (districtFilter && !inDistrict(stop.lat, stop.long, districtFilter)) return;
+        const marker = createCircleMarker(stop.lat, stop.long, 'lwb', stop);
+        marker.on('click', () => showPopup(marker, stop, 'lwb'));
+        lwbMarkers.addLayer(marker);
+      });
+    }
+  }
+
+  if (op === 'gmb' || op === 'all') {
+    if (gmbData && gmbData.stops) {
+      gmbData.stops.forEach(stop => {
+        if (districtFilter && !inDistrictGmb(stop, districtFilter)) return;
+        const marker = createCircleMarker(stop.lat[1] || stop.lat, stop.lng[1] || stop.lng, 'gmb', stop);
+        marker.on('click', () => showPopup(marker, stop, 'gmb'));
+        gmbMarkers.addLayer(marker);
+      });
+    }
+  }
+
+  if (op === 'mtr' || op === 'all') {
+    if (mtrData && mtrData.routes) {
+      const addedStops = new Set();
+      mtrData.routes.forEach(route => {
+        if (route.stops) {
+          route.stops.forEach(stop => {
+            if (addedStops.has(stop.STATION_ID)) return;
+            addedStops.add(stop.STATION_ID);
+            if (districtFilter && !inDistrict(stop.STATION_LATITUDE, stop.STATION_LONGITUDE, districtFilter)) return;
+            const marker = createCircleMarker(stop.STATION_LATITUDE, stop.STATION_LONGITUDE, 'mtr', stop);
+            marker.on('click', () => showPopup(marker, stop, 'mtr'));
+            mtrMarkers.addLayer(marker);
+          });
+        }
+      });
+    }
+  }
+
+  updateLegend();
+}
+
+function inDistrict(lat, lng, bbox) {
+  return lat >= bbox.latMin && lat <= bbox.latMax && lng >= bbox.lngMin && lng <= bbox.lngMax;
+}
+
+function inDistrictGmb(stop, bbox) {
+  const lat = stop.lat[1] || stop.lat;
+  const lng = stop.lng[1] || stop.lng;
+  return lat >= bbox.latMin && lat <= bbox.latMax && lng >= bbox.lngMin && lng <= bbox.lngMax;
+}
+
+function createCircleMarker(lat, lng, operator, data) {
+  return L.circleMarker([lat, lng], {
+    radius: 8,
+    fillColor: COLORS[operator],
+    color: '#fff',
+    weight: 2,
+    opacity: 1,
+    fillOpacity: 0.8
+  });
+}
+
+// ==================== POPUP ====================
+function showPopup(marker, stop, operator) {
+  let nameTc, nameEn, stopId;
+  
+  if (operator === 'kmb' || operator === 'lwb') {
+    nameTc = stop.name_tc;
+    nameEn = stop.name_en;
+    stopId = stop.stop;
+  } else if (operator === 'mtr') {
+    nameTc = stop.STATION_NAME_CHI;
+    nameEn = stop.STATION_NAME_ENG;
+    stopId = stop.STATION_ID;
+  } else {
+    nameTc = stop.name_tc || stop.name_en || '小巴站';
+    nameEn = stop.name_en || stop.name_tc || 'GMB Stop';
+    stopId = stop.stop_id;
+  }
+
+  const routes = stopRoutesIndex[operator]?.[stopId] || [];
+  const displayRoutes = routes.slice(0, 10);
+  
+  let routesHtml = '';
+  if (displayRoutes.length > 0) {
+    routesHtml = '<div class="routes-title">途經路線：</div>';
+    displayRoutes.forEach(r => {
+      const dest = operator === 'mtr' ? r.route_name_tc : (r.dest_tc || r.route);
+      routesHtml += `<div class="route-item"><span class="route-code">${r.route}</span><span class="route-dest">→ ${dest}</span></div>`;
+    });
+    if (routes.length > 10) {
+      routesHtml += `<div class="more-routes">更多... (共${routes.length}條路線)</div>`;
+    }
+  }
+
+  let etaHtml = '';
+  if (operator === 'kmb' || operator === 'lwb') {
+    etaHtml = `<div class="eta-section"><div class="eta-title">即時到站：</div><div class="eta-loading">載入中...</div></div>`;
+  } else if (operator === 'gmb') {
+    etaHtml = `<div class="eta-section"><div class="no-eta">即時到站資料暫不可用</div></div>`;
+  } else {
+    etaHtml = `<div class="eta-section"><div class="no-eta">即時到站資料暫不可用</div></div>`;
+  }
+
+  const content = `
+    <div class="popup-content">
+      <h3>${nameTc}</h3>
+      <div class="name-en">${nameEn}</div>
+      ${routesHtml}
+      ${etaHtml}
+    </div>
+  `;
+
+  marker.bindPopup(content, { maxWidth: 300 }).openPopup();
+
+  // Fetch ETA for KMB/LWB
+  if ((operator === 'kmb' || operator === 'lwb') && routes.length > 0) {
+    fetchEtas(stopId, operator, routes);
+  }
+}
+
+// ==================== ETA ====================
+async function fetchEtas(stopId, operator, routes) {
+  const cacheKey = `${stopId}_${operator}`;
+  const now = Date.now();
+  
+  // Check cache
+  if (etaCache[cacheKey] && now - etaCache[cacheKey].timestamp < 30000) {
+    updateEtaDisplay(stopId, operator, etaCache[cacheKey].data);
+    return;
+  }
+
+  const etaPromises = routes.slice(0, 5).map(r => {
+    const [route, bound, svcType] = r.key.split('|');
+    return fetchEtaForRoute(stopId, route, svcType || '1', operator);
+  });
+
+  try {
+    const results = await Promise.allSettled(etaPromises);
+    const allEtas = [];
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled' && result.value) {
+        allEtas.push({ route: routes[i].route, etas: result.value });
+      }
+    });
+
+    etaCache[cacheKey] = { data: allEtas, timestamp: now };
+    updateEtaDisplay(stopId, operator, allEtas);
+
+    // Set refresh timer
+    if (etaRefreshTimers[cacheKey]) clearTimeout(etaRefreshTimers[cacheKey]);
+    etaRefreshTimers[cacheKey] = setTimeout(() => fetchEtas(stopId, operator, routes), 30000);
+
+  } catch (err) {
+    console.error('ETA fetch error:', err);
+  }
+}
+
+async function fetchEtaForRoute(stopId, route, serviceType, operator) {
+  try {
+    const url = `https://data.etabus.gov.hk/v1/transport/kmb/eta/${stopId}/${route}/${serviceType}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.data?.slice(0, 3) || [];
+  } catch (err) {
+    return null;
+  }
+}
+
+function updateEtaDisplay(stopId, operator, etas) {
+  const popup = document.querySelector('.leaflet-popup-content');
+  if (!popup) return;
+
+  const stop = etas;
+  let html = '<div class="eta-section"><div class="eta-title">即時到站：</div>';
+
+  if (!etas || etas.length === 0) {
+    html += '<div class="eta-error">暫無到站資料</div></div>';
+  } else {
+    etas.forEach(group => {
+      html += `<div style="margin:5px 0;"><b>${group.route}:</b>`;
+      if (group.etas.length === 0) {
+        html += ' <span class="eta-error">無資料</span>';
+      } else {
+        group.etas.forEach(eta => {
+          const mins = Math.round(new Date(eta.eta).getTime() / 60000);
+          const rmk = eta.rmk_tc || eta.rmk_en || '';
+          html += `<div class="eta-item">${mins} 分鐘 ${rmk ? '(' + rmk + ')' : ''}</div>`;
+        });
+      }
+      html += '</div>';
+    });
+  }
+
+  html += '</div>';
+  
+  const existingSection = popup.querySelector('.eta-section');
+  if (existingSection) {
+    existingSection.innerHTML = html;
+  }
+}
+
+// ==================== SEARCH ====================
+let allStopNames = [];
+
+function buildSearchIndex() {
+  allStopNames = [];
+
+  if (kmbData) {
+    if (kmbData.kmb_stops) {
+      kmbData.kmb_stops.forEach(s => {
+        allStopNames.push({ 
+          name_tc: s.name_tc, 
+          name_en: s.name_en, 
+          stopId: s.stop, 
+          operator: 'kmb',
+          lat: s.lat,
+          lng: s.long
+        });
+      });
+    }
+    if (kmbData.lwb_stops) {
+      kmbData.lwb_stops.forEach(s => {
+        allStopNames.push({ 
+          name_tc: s.name_tc, 
+          name_en: s.name_en, 
+          stopId: s.stop, 
+          operator: 'lwb',
+          lat: s.lat,
+          lng: s.long
+        });
+      });
+    }
+  }
+
+  if (mtrData && mtrData.routes) {
+    const seen = new Set();
+    mtrData.routes.forEach(r => {
+      if (r.stops) {
+        r.stops.forEach(s => {
+          if (seen.has(s.STATION_ID)) return;
+          seen.add(s.STATION_ID);
+          allStopNames.push({ 
+            name_tc: s.STATION_NAME_CHI, 
+            name_en: s.STATION_NAME_ENG, 
+            stopId: s.STATION_ID, 
+            operator: 'mtr',
+            lat: s.STATION_LATITUDE,
+            lng: s.STATION_LONGITUDE
+          });
+        });
+      }
+    });
+  }
+
+  if (gmbData && gmbData.stops) {
+    gmbData.stops.forEach(s => {
+      allStopNames.push({ 
+        name_tc: s.name_tc || s.name_en || '小巴站', 
+        name_en: s.name_en || s.name_tc || 'GMB Stop', 
+        stopId: s.stop_id, 
+        operator: 'gmb',
+        lat: s.lat[1] || s.lat,
+        lng: s.lng[1] || s.lng
+      });
+    });
+  }
+}
+
+function searchStops(query) {
+  if (!query || query.length < 1) return [];
+  const q = query.toLowerCase();
+  return allStopNames.filter(s => 
+    s.name_tc.toLowerCase().includes(q) || 
+    s.name_en.toLowerCase().includes(q)
+  ).slice(0, 20);
+}
+
+function showAutocomplete(results) {
+  const container = document.getElementById('autocomplete');
+  if (results.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = results.map(r => `
+    <div class="autocomplete-item" data-lat="${r.lat}" data-lng="${r.lng}" data-stopid="${r.stopId}" data-op="${r.operator}">
+      <div class="name-tc">${r.name_tc}</div>
+      <div class="name-en">${r.name_en}</div>
+    </div>
+  `).join('');
+
+  container.style.display = 'block';
+
+  container.querySelectorAll('.autocomplete-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const lat = parseFloat(item.dataset.lat);
+      const lng = parseFloat(item.dataset.lng);
+      map.setView([lat, lng], 16);
+      container.style.display = 'none';
+      document.getElementById('search').value = '';
+    });
+  });
+}
+
+// ==================== GPS ====================
+function findNearestStops(lat, lng) {
+  clearNearestMarkers();
+
+  const allStops = [];
+  
+  if (kmbData && kmbData.kmb_stops) {
+    kmbData.kmb_stops.forEach(s => {
+      allStops.push({ ...s, operator: 'kmb', lat: parseFloat(s.lat), lng: parseFloat(s.long) });
+    });
+  }
+  if (kmbData && kmbData.lwb_stops) {
+    kmbData.lwb_stops.forEach(s => {
+      allStops.push({ ...s, operator: 'lwb', lat: parseFloat(s.lat), lng: parseFloat(s.long) });
+    });
+  }
+  if (gmbData && gmbData.stops) {
+    gmbData.stops.forEach(s => {
+      allStops.push({ 
+        ...s, 
+        operator: 'gmb', 
+        lat: parseFloat(s.lat[1] || s.lat), 
+        lng: parseFloat(s.lng[1] || s.lng) 
+      });
+    });
+  }
+  if (mtrData && mtrData.routes) {
+    const seen = new Set();
+    mtrData.routes.forEach(r => {
+      if (r.stops) {
+        r.stops.forEach(s => {
+          if (seen.has(s.STATION_ID)) return;
+          seen.add(s.STATION_ID);
+          allStops.push({ 
+            ...s, 
+            operator: 'mtr', 
+            lat: parseFloat(s.STATION_LATITUDE), 
+            lng: parseFloat(s.STATION_LONGITUDE) 
+          });
+        });
+      }
+    });
+  }
+
+  // Calculate distances and sort
+  allStops.forEach(s => {
+    s.distance = Math.sqrt(Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2));
+  });
+
+  const nearest = allStops.sort((a, b) => a.distance - b.distance).slice(0, 5);
+
+  nearest.forEach(s => {
+    const marker = L.circleMarker([s.lat, s.lng], {
+      radius: 12,
+      fillColor: '#fff',
+      color: COLORS[s.operator],
+      weight: 4,
+      opacity: 1,
+      fillOpacity: 0.9
+    }).addTo(map);
+    nearestMarkers.push(marker);
+  });
+}
+
+function clearNearestMarkers() {
+  nearestMarkers.forEach(m => map.removeLayer(m));
+  nearestMarkers = [];
+}
+
+// ==================== LEGEND ====================
+function updateLegend() {
+  document.getElementById('kmb-count').textContent = `(${(kmbData?.kmb_stops?.length || 0)})`;
+  document.getElementById('gmb-count').textContent = `(${(gmbData?.stops?.length || 0)})`;
+  document.getElementById('mtr-count').textContent = `(${(mtrData?.metadata?.unique_stops || 0)})`;
+  document.getElementById('lwb-count').textContent = `(${(kmbData?.lwb_stops?.length || 0)})`;
+}
+
+// ==================== EVENT LISTENERS ====================
+function setupEventListeners() {
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentOperator = tab.dataset.op;
+      
+      const districtFilter = document.getElementById('district-filter');
+      districtFilter.style.display = (currentOperator === 'kmb' || currentOperator === 'all') ? 'block' : 'none';
+      
+      loadOperatorStops(currentOperator);
+    });
+  });
+
+  // Search
+  const searchInput = document.getElementById('search');
+  const autocomplete = document.getElementById('autocomplete');
+
+  searchInput.addEventListener('input', (e) => {
+    const results = searchStops(e.target.value);
+    showAutocomplete(results);
+  });
+
+  searchInput.addEventListener('blur', () => {
+    setTimeout(() => autocomplete.style.display = 'none', 200);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value) {
+      const results = searchStops(searchInput.value);
+      showAutocomplete(results);
+    }
+  });
+
+  // District filter
+  document.getElementById('district').addEventListener('change', () => {
+    loadOperatorStops(currentOperator);
+  });
+
+  // GPS button
+  document.getElementById('gps-btn').addEventListener('click', () => {
+    const btn = document.getElementById('gps-btn');
+    
+    if (!navigator.geolocation) {
+      alert('您的瀏覽器不支援定位功能');
+      return;
+    }
+
+    btn.classList.add('active');
+    btn.textContent = '📍 定位中...';
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLocation = [pos.coords.latitude, pos.coords.longitude];
+        map.setView(userLocation, 15);
+
+        // Add user marker
+        L.circleMarker(userLocation, {
+          radius: 10,
+          fillColor: '#3498db',
+          color: '#fff',
+          weight: 3,
+          fillOpacity: 1
+        }).addTo(map).bindPopup('您的位置');
+
+        findNearestStops(userLocation[0], userLocation[1]);
+        btn.textContent = '📍 已定位 (清除)';
+      },
+      (err) => {
+        alert('無法取得位置：' + err.message);
+        btn.classList.remove('active');
+        btn.textContent = '📍 顯示我的位置';
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+
+    // Toggle off on second click
+    if (btn.dataset.active === 'true') {
+      clearNearestMarkers();
+      btn.classList.remove('active');
+      btn.textContent = '📍 顯示我的位置';
+      btn.dataset.active = 'false';
+    } else {
+      btn.dataset.active = 'true';
+    }
+  });
+
+  // Build search index after data load
+  buildSearchIndex();
+}
+
+// ==================== START ====================
+init();
+</script>
+</body>
+</html>
