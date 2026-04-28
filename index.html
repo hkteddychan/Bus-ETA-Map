@@ -12,6 +12,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; }
   #map { width: 100vw; height: 100vh; }
   
+  /* ============ CONTROLS ============ */
   .controls {
     position: absolute;
     top: 10px;
@@ -19,164 +20,363 @@
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-width: 320px;
+    gap: 8px;
+    max-width: 340px;
   }
   
-  .tabs {
-    display: flex;
+  /* Operator toggles — checkbox style */
+  .op-toggles {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 10px 12px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
   }
   
-  .tab {
-    padding: 10px 16px;
+  .op-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 2px solid transparent;
     cursor: pointer;
-    border: none;
-    background: #f0f0f0;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     transition: all 0.2s;
+    background: #f0f0f0;
+    color: #666;
+    user-select: none;
   }
   
-  .tab.active { background: #3498db; color: white; }
-  .tab:hover:not(.active) { background: #ddd; }
+  .op-toggle.active {
+    color: white;
+    border-color: transparent;
+  }
   
+  .op-toggle .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+  
+  .op-toggle.active .dot { opacity: 1; }
+  .op-toggle[data-op=kmb] { border-color: #e74c3c40; }
+  .op-toggle[data-op=kmb].active { background: #e74c3c; border-color: #e74c3c; }
+  .op-toggle[data-op=lwb] { border-color: #e67e2240; }
+  .op-toggle[data-op=lwb].active { background: #e67e22; border-color: #e67e22; }
+  .op-toggle[data-op=gmb] { border-color: #27ae6040; }
+  .op-toggle[data-op=gmb].active { background: #27ae60; border-color: #27ae60; }
+  .op-toggle[data-op=mtr] { border-color: #3498db40; }
+  .op-toggle[data-op=mtr].active { background: #3498db; border-color: #3498db; }
+  
+  .op-toggle .count {
+    font-size: 11px;
+    opacity: 0.85;
+    font-weight: 400;
+  }
+  
+  /* Search box */
   .search-box {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 8px 10px;
+    position: relative;
   }
   
   .search-box input {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
   }
+  
+  .search-box input:focus { border-color: #3498db; }
   
   .autocomplete {
     position: absolute;
     background: white;
-    border: 1px solid #ddd;
+    border: 1.5px solid #e0e0e0;
     border-top: none;
-    border-radius: 0 0 6px 6px;
-    max-height: 250px;
+    border-radius: 0 0 8px 8px;
+    max-height: 280px;
     overflow-y: auto;
     display: none;
     z-index: 1001;
-    width: calc(100% - 20px);
-    margin-left: 10px;
+    width: calc(100% - 0px);
+    left: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
   
   .autocomplete-item {
     padding: 10px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f0f0f0;
     font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .autocomplete-item:hover { background: #f5f8ff; }
+  .autocomplete-item .name-tc { font-weight: 600; color: #222; }
+  .autocomplete-item .name-en { color: #888; font-size: 12px; margin-top: 1px; }
+  .autocomplete-item .op-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-left: 8px;
   }
   
-  .autocomplete-item:hover { background: #f5f5f5; }
-  .autocomplete-item .name-tc { font-weight: 600; }
-  .autocomplete-item .name-en { color: #666; font-size: 12px; }
-  
-  .filter-box {
+  /* District filter */
+  .district-bar {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 8px 12px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-items: center;
   }
+  .district-bar::-webkit-scrollbar { display: none; }
   
-  .filter-box label {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 5px;
-    display: block;
+  .district-pill {
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1.5px solid #ddd;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #555;
+    background: white;
+    transition: all 0.15s;
   }
+  .district-pill:hover { border-color: #aaa; color: #333; }
+  .district-pill.active { background: #3498db; color: white; border-color: #3498db; }
   
-  .filter-box select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-  
+  /* GPS button */
   .gps-btn {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    padding: 10px 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 8px 14px;
     cursor: pointer;
     border: none;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    color: #333;
+    transition: all 0.2s;
   }
-  
   .gps-btn:hover { background: #f5f5f5; }
   .gps-btn.active { background: #3498db; color: white; }
   
+  /* Floating zoom controls */
+  .floating-controls {
+    position: absolute;
+    bottom: 80px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .fc-btn {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .fc-btn:hover { background: #f0f0f0; }
+  .fc-btn:active { background: #e0e0e0; }
+  
+  /* Legend */
   .legend {
     position: absolute;
     bottom: 30px;
     right: 10px;
     z-index: 1000;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    padding: 12px 15px;
-    font-size: 13px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 10px 14px;
+    font-size: 12px;
+    min-width: 130px;
+  }
+  .legend-title { font-weight: 700; margin-bottom: 7px; color: #333; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; color: #555; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  
+  /* ============ POPUP ============ */
+  .leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
   }
   
-  .legend-title { font-weight: 700; margin-bottom: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .popup-inner {
+    min-width: 220px;
+    max-width: 320px;
+    padding: 14px 16px;
+  }
   
-  .popup-content { min-width: 200px; }
-  .popup-content h3 { margin-bottom: 8px; font-size: 15px; }
-  .popup-content .name-en { color: #666; font-size: 13px; margin-bottom: 10px; }
-  .popup-content .routes-title { font-weight: 600; margin: 10px 0 5px; font-size: 13px; color: #555; }
-  .popup-content .route-item { padding: 4px 0; border-bottom: 1px solid #eee; font-size: 13px; }
-  .popup-content .route-item:last-child { border-bottom: none; }
-  .popup-content .route-code { font-weight: 700; color: #333; }
-  .popup-content .route-dest { color: #666; margin-left: 5px; }
-  .popup-content .more-routes { color: #3498db; font-size: 12px; padding-top: 5px; }
-  .popup-content .eta-section { margin-top: 12px; border-top: 1px solid #ddd; padding-top: 10px; }
-  .popup-content .eta-title { font-weight: 600; font-size: 13px; color: #555; }
-  .popup-content .eta-item { padding: 3px 0; font-size: 13px; }
-  .popup-content .eta-loading { color: #999; font-size: 12px; }
-  .popup-content .eta-error { color: #e74c3c; font-size: 12px; }
-  .popup-content .no-eta { color: #999; font-size: 12px; }
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .popup-header .stop-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .popup-header .stop-op {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .popup-stop-en {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
   
+  /* Route chips */
+  .route-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .route-chip {
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+    border: 2px solid transparent;
+  }
+  .route-chip:hover { transform: scale(1.05); opacity: 0.9; }
+  .route-chip.selected { border-color: #222; transform: scale(1.05); }
+  
+  /* ETA section */
+  .eta-section {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .eta-section-title {
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  
+  .eta-route-group {
+    margin-bottom: 8px;
+  }
+  .eta-route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .eta-route-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+  }
+  .eta-route-dest {
+    font-size: 11px;
+    color: #888;
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  
+  .eta-times {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .eta-chip {
+    padding: 3px 9px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+  }
+  .eta-chip.soon { background: #27ae60; }   /* ≤10 min */
+  .eta-chip.medium { background: #f39c12; }  /* 10-20 min */
+  .eta-chip.late { background: #e74c3c; }   /* >20 min */
+  .eta-chip.none { background: #ccc; }
+  
+  .eta-loading, .eta-error, .eta-no-data {
+    font-size: 12px;
+    color: #aaa;
+    padding: 4px 0;
+  }
+  .eta-error { color: #e74c3c; }
+  
+  /* Loading overlay */
   .loading-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.95);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
     flex-direction: column;
-    gap: 15px;
+    gap: 14px;
   }
-  
   .loading-spinner {
-    width: 40px; height: 40px;
-    border: 4px solid #f3f3f3;
+    width: 44px; height: 44px;
+    border: 4px solid #e8e8e8;
     border-top: 4px solid #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
-  
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .loading-text { font-size: 16px; color: #333; }
+  .loading-text { font-size: 15px; color: #444; font-weight: 500; }
+  .loading-sub { font-size: 12px; color: #999; }
 </style>
 </head>
 <body>
@@ -184,131 +384,138 @@
 <div id="loading" class="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text">載入巴士數據中...</div>
+  <div class="loading-sub" id="loading-sub">正在連接伺服器...</div>
 </div>
 
+<!-- Controls -->
 <div class="controls">
-  <div class="tabs">
-    <button class="tab active" data-op="kmb">九巴</button>
-    <button class="tab" data-op="gmb">小巴</button>
-    <button class="tab" data-op="mtr">港鐵</button>
-    <button class="tab" data-op="all">全部</button>
+  <!-- Operator toggles -->
+  <div class="op-toggles">
+    <div class="op-toggle active" data-op="kmb"><span class="dot"></span>九巴<span class="count" id="cnt-kmb"></span></div>
+    <div class="op-toggle active" data-op="lwb"><span class="dot"></span>龍運<span class="count" id="cnt-lwb"></span></div>
+    <div class="op-toggle active" data-op="gmb"><span class="dot"></span>小巴<span class="count" id="cnt-gmb"></span></div>
+    <div class="op-toggle active" data-op="mtr"><span class="dot"></span>港鐵<span class="count" id="cnt-mtr"></span></div>
   </div>
   
+  <!-- Search -->
   <div class="search-box">
-    <input type="text" id="search" placeholder="搜尋巴士站..." autocomplete="off">
+    <input type="text" id="search" placeholder="🔍 搜尋巴士站或路線..." autocomplete="off">
     <div id="autocomplete" class="autocomplete"></div>
   </div>
   
-  <div class="filter-box" id="district-filter" style="display:none;">
-    <label>地區篩選</label>
-    <select id="district">
-      <option value="">全部地區</option>
-      <option value="中西區">中西區</option>
-      <option value="灣仔">灣仔</option>
-      <option value="東區">東區</option>
-      <option value="南區">南區</option>
-      <option value="油尖旺">油尖旺</option>
-      <option value="深水埗">深水埗</option>
-      <option value="九龍城">九龍城</option>
-      <option value="黃大仙">黃大仙</option>
-      <option value="觀塘">觀塘</option>
-      <option value="荃灣">荃灣</option>
-      <option value="屯門">屯門</option>
-      <option value="元朗">元朗</option>
-      <option value="北區">北區</option>
-      <option value="大埔">大埔</option>
-      <option value="沙田">沙田</option>
-      <option value="西貢">西貢</option>
-      <option value="葵青">葵青</option>
-      <option value="離島">離島</option>
-    </select>
+  <!-- District pills -->
+  <div class="district-bar" id="district-bar">
+    <div class="district-pill active" data-dist="">全部</div>
+    <div class="district-pill" data-dist="中西區">中西區</div>
+    <div class="district-pill" data-dist="灣仔">灣仔</div>
+    <div class="district-pill" data-dist="東區">東區</div>
+    <div class="district-pill" data-dist="南區">南區</div>
+    <div class="district-pill" data-dist="油尖旺">油尖旺</div>
+    <div class="district-pill" data-dist="深水埗">深水埗</div>
+    <div class="district-pill" data-dist="九龍城">九龍城</div>
+    <div class="district-pill" data-dist="黃大仙">黃大仙</div>
+    <div class="district-pill" data-dist="觀塘">觀塘</div>
+    <div class="district-pill" data-dist="葵青">葵青</div>
+    <div class="district-pill" data-dist="荃灣">荃灣</div>
+    <div class="district-pill" data-dist="屯門">屯門</div>
+    <div class="district-pill" data-dist="元朗">元朗</div>
+    <div class="district-pill" data-dist="北區">北區</div>
+    <div class="district-pill" data-dist="大埔">大埔</div>
+    <div class="district-pill" data-dist="沙田">沙田</div>
+    <div class="district-pill" data-dist="西貢">西貢</div>
+    <div class="district-pill" data-dist="離島">離島</div>
   </div>
   
+  <!-- GPS -->
   <button class="gps-btn" id="gps-btn">📍 顯示我的位置</button>
 </div>
 
+<!-- Floating controls -->
+<div class="floating-controls">
+  <button class="fc-btn" id="fc-zoom-in" title="放大">+</button>
+  <button class="fc-btn" id="fc-zoom-out" title="縮小">−</button>
+</div>
+
+<!-- Map -->
 <div id="map"></div>
 
+<!-- Legend -->
 <div class="legend" id="legend">
   <div class="legend-title">圖例</div>
-  <div class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 九巴 <span id="kmb-count">(0)</span></div>
-  <div class="legend-item"><span class="legend-dot" style="background:#27ae60;"></span> 小巴 <span id="gmb-count">(0)</span></div>
-  <div class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> 港鐵 <span id="mtr-count">(0)</span></div>
-  <div class="legend-item"><span class="legend-dot" style="background:#e67e22;"></span> 龍運 <span id="lwb-count">(0)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span>九巴 <span id="leg-kmb"></span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#e67e22;"></span>龍運 <span id="leg-lwb"></span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#27ae60;"></span>專線小巴 <span id="leg-gmb"></span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#3498db;"></span>港鐵巴士 <span id="leg-mtr"></span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
-// ==================== CONFIG ====================
-const COLORS = {
-  kmb: '#e74c3c',
-  gmb: '#27ae60',
-  mtr: '#3498db',
-  lwb: '#e67e22'
-};
+'use strict';
 
+// ============ CONFIG ============
+const COLORS = { kmb: '#e74c3c', lwb: '#e67e22', gmb: '#27ae60', mtr: '#3498db' };
+const OP_NAMES = { kmb: '九巴', lwb: '龍運', gmb: '小巴', mtr: '港鐵' };
 const HK_CENTER = [22.35, 114.17];
 const DEFAULT_ZOOM = 11;
 
-// District bounding boxes for HK 18 districts
 const DISTRICT_BBOX = {
-  '中西區': { latMin: 22.26, latMax: 22.30, lngMin: 114.13, lngMax: 114.18 },
-  '灣仔': { latMin: 22.26, latMax: 22.29, lngMin: 114.16, lngMax: 114.20 },
-  '東區': { latMin: 22.24, latMax: 22.32, lngMin: 114.18, lngMax: 114.25 },
-  '南區': { latMin: 22.20, latMax: 22.28, lngMin: 114.12, lngMax: 114.22 },
-  '油尖旺': { latMin: 22.28, latMax: 22.31, lngMin: 114.16, lngMax: 114.20 },
-  '深水埗': { latMin: 22.32, latMax: 22.35, lngMin: 114.15, lngMax: 114.18 },
-  '九龍城': { latMin: 22.32, latMax: 22.36, lngMin: 114.17, lngMax: 114.21 },
-  '黃大仙': { latMin: 22.33, latMax: 22.37, lngMin: 114.19, lngMax: 114.23 },
-  '觀塘': { latMin: 22.29, latMax: 22.36, lngMin: 114.21, lngMax: 114.27 },
-  '荃灣': { latMin: 22.35, latMax: 22.42, lngMin: 114.08, lngMax: 114.15 },
-  '屯門': { latMin: 22.36, latMax: 22.42, lngMin: 113.95, lngMax: 114.05 },
-  '元朗': { latMin: 22.43, latMax: 22.50, lngMin: 113.95, lngMax: 114.10 },
-  '北區': { latMin: 22.48, latMax: 22.58, lngMin: 114.10, lngMax: 114.25 },
-  '大埔': { latMin: 22.42, latMax: 22.52, lngMin: 114.15, lngMax: 114.25 },
-  '沙田': { latMin: 22.37, latMax: 22.45, lngMin: 114.17, lngMax: 114.25 },
-  '西貢': { latMin: 22.28, latMax: 22.40, lngMin: 114.23, lngMax: 114.35 },
-  '葵青': { latMin: 22.34, latMax: 22.42, lngMin: 114.12, lngMax: 114.18 },
-  '離島': { latMin: 22.15, latMax: 22.32, lngMin: 113.82, lngMax: 114.40 }
+  '中西區': {latMin:22.26,latMax:22.30,lngMin:114.13,lngMax:114.18},
+  '灣仔':   {latMin:22.26,latMax:22.29,lngMin:114.16,lngMax:114.20},
+  '東區':   {latMin:22.24,latMax:22.32,lngMin:114.18,lngMax:114.25},
+  '南區':   {latMin:22.20,latMax:22.28,lngMin:114.12,lngMax:114.22},
+  '油尖旺': {latMin:22.28,latMax:22.31,lngMin:114.16,lngMax:114.20},
+  '深水埗': {latMin:22.32,latMax:22.35,lngMin:114.15,lngMax:114.18},
+  '九龍城': {latMin:22.32,latMax:22.36,lngMin:114.17,lngMax:114.21},
+  '黃大仙': {latMin:22.33,latMax:22.37,lngMin:114.19,lngMax:114.23},
+  '觀塘':   {latMin:22.29,latMax:22.36,lngMin:114.21,lngMax:114.27},
+  '荃灣':   {latMin:22.35,latMax:22.42,lngMin:114.08,lngMax:114.15},
+  '屯門':   {latMin:22.36,latMax:22.42,lngMin:113.95,lngMax:114.05},
+  '元朗':   {latMin:22.43,latMax:22.50,lngMin:113.95,lngMax:114.10},
+  '北區':   {latMin:22.48,latMax:22.58,lngMin:114.10,lngMax:114.25},
+  '大埔':   {latMin:22.42,latMax:22.52,lngMin:114.15,lngMax:114.25},
+  '沙田':   {latMin:22.37,latMax:22.45,lngMin:114.17,lngMax:114.25},
+  '西貢':   {latMin:22.28,latMax:22.40,lngMin:114.23,lngMax:114.35},
+  '葵青':   {latMin:22.34,latMax:22.42,lngMin:114.12,lngMax:114.18},
+  '離島':   {latMin:22.15,latMax:22.32,lngMin:113.82,lngMax:114.40}
 };
 
-// ==================== STATE ====================
-let map;
-let kmbMarkers, gmbMarkers, mtrMarkers, lwbMarkers;
-let kmbClusterGroup;
-let currentOperator = 'kmb';
-let kmbData = null, mtrData = null, gmbData = null;
-let stopRoutesIndex = { kmb: {}, lwb: {}, mtr: {} };
+// ============ STATE ============
+let map, kmbCluster;
+let kmbMarkers=L.layerGroup(), lwbMarkers=L.layerGroup(), gmbMarkers=L.layerGroup(), mtrMarkers=L.layerGroup();
+let kmbData=null, mtrData=null, gmbData=null;
+let stopRoutesIndex = {kmb:{}, lwb:{}, mtr:{}, gmb:{}};
 let etaCache = {};
-let etaRefreshTimers = {};
-let userLocation = null;
+let etaTimers = {};
 let nearestMarkers = [];
+let activeOps = new Set(['kmb','lwb','gmb','mtr']);
+let currentDistrict = '';
+let allStopNames = []; // search index
+let userMarker = null;
 
-// ==================== INIT ====================
+// ============ INIT ============
 async function init() {
+  document.getElementById('loading-sub').textContent = '正在載入地圖...';
+  
   map = L.map('map').setView(HK_CENTER, DEFAULT_ZOOM);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    attribution: '© OpenStreetMap © CARTO',
     maxZoom: 19
   }).addTo(map);
-
-  // Initialize marker groups
-  kmbClusterGroup = L.markerClusterGroup({ 
-    maxClusterRadius: 50, 
-    spiderfyOnMaxZoom: true, 
-    showCoverageOnHover: false 
-  });
-  gmbMarkers = L.layerGroup();
-  mtrMarkers = L.layerGroup();
-  lwbMarkers = L.layerGroup();
-
-  map.addLayer(kmbClusterGroup);
+  
+  // Floating controls
+  document.getElementById('fc-zoom-in').onclick = () => map.zoomIn();
+  document.getElementById('fc-zoom-out').onclick = () => map.zoomOut();
+  
+  // Init clusters
+  kmbCluster = L.markerClusterGroup({maxClusterRadius:50, spiderfyOnMaxZoom:true, showCoverageOnHover:false});
+  map.addLayer(kmbCluster);
+  map.addLayer(lwbMarkers);
   map.addLayer(gmbMarkers);
   map.addLayer(mtrMarkers);
-  map.addLayer(lwbMarkers);
-
-  // Load data
+  
+  document.getElementById('loading-sub').textContent = '正在載入巴士數據...';
+  
   try {
     const [kmbRes, mtrRes, gmbRes] = await Promise.all([
       fetch('./kmb_data.json'),
@@ -316,587 +523,508 @@ async function init() {
       fetch('./gmb_data.json')
     ]);
     
-    if (!kmbRes.ok) throw new Error('KMB data failed');
-    if (!mtrRes.ok) throw new Error('MTR data failed');
-    if (!gmbRes.ok) throw new Error('GMB data failed');
+    if (!kmbRes.ok || !mtrRes.ok || !gmbRes.ok) throw new Error('Failed to load data');
     
     kmbData = await kmbRes.json();
     mtrData = await mtrRes.json();
     gmbData = await gmbRes.json();
     
     buildStopRoutesIndex();
-    loadOperatorStops('kmb');
-    updateLegend();
+    buildSearchIndex();
+    updateCounts();
+    loadStops();
     
-  } catch (err) {
-    console.error('Data load error:', err);
-    alert('數據載入失敗，請刷新頁面重試');
+  } catch(err) {
+    console.error(err);
+    alert('數據載入失敗，請刷新頁面');
   }
-
-  setupEventListeners();
+  
+  setupEvents();
   document.getElementById('loading').style.display = 'none';
 }
 
-// ==================== INDEX BUILDING ====================
+// ============ INDEXES ============
 function buildStopRoutesIndex() {
-  // KMB route-stops
+  // KMB
   if (kmbData.kmb_route_stops) {
     kmbData.kmb_route_stops.forEach(rs => {
       if (!stopRoutesIndex.kmb[rs.stop]) stopRoutesIndex.kmb[rs.stop] = [];
-      const routeKey = `${rs.route}|${rs.bound}|${rs.service_type}`;
-      if (!stopRoutesIndex.kmb[rs.stop].find(r => r.key === routeKey)) {
-        const routeInfo = kmbData.kmb_routes.find(r => r.route === rs.route && r.bound === rs.bound && r.service_type === rs.service_type);
+      const key = `${rs.route}|${rs.bound}|${rs.service_type}`;
+      if (!stopRoutesIndex.kmb[rs.stop].find(r=>r.key===key)) {
+        const ri = kmbData.kmb_routes.find(r=>r.route===rs.route && r.bound===rs.bound && r.service_type===rs.service_type);
         stopRoutesIndex.kmb[rs.stop].push({
-          key: routeKey,
+          key,
           route: rs.route,
           bound: rs.bound,
-          serviceType: rs.service_type,
-          dest_tc: routeInfo ? routeInfo.dest_tc : '',
-          dest_en: routeInfo ? routeInfo.dest_en : ''
+          svc: rs.service_type,
+          dest_tc: ri?.dest_tc || '',
+          dest_en: ri?.dest_en || ''
         });
       }
     });
   }
-
-  // LWB route-stops
+  // LWB
   if (kmbData.lwb_route_stops) {
     kmbData.lwb_route_stops.forEach(rs => {
       if (!stopRoutesIndex.lwb[rs.stop]) stopRoutesIndex.lwb[rs.stop] = [];
-      const routeKey = `${rs.route}|${rs.bound}|${rs.service_type}`;
-      if (!stopRoutesIndex.lwb[rs.stop].find(r => r.key === routeKey)) {
-        const routeInfo = kmbData.lwb_routes.find(r => r.route === rs.route && r.bound === rs.bound && r.service_type === rs.service_type);
+      const key = `${rs.route}|${rs.bound}|${rs.service_type}`;
+      if (!stopRoutesIndex.lwb[rs.stop].find(r=>r.key===key)) {
+        const ri = kmbData.lwb_routes.find(r=>r.route===rs.route && r.bound===rs.bound && r.service_type===rs.service_type);
         stopRoutesIndex.lwb[rs.stop].push({
-          key: routeKey,
+          key,
           route: rs.route,
           bound: rs.bound,
-          serviceType: rs.service_type,
-          dest_tc: routeInfo ? routeInfo.dest_tc : '',
-          dest_en: routeInfo ? routeInfo.dest_en : ''
+          svc: rs.service_type,
+          dest_tc: ri?.dest_tc || '',
+          dest_en: ri?.dest_en || ''
         });
       }
     });
   }
-
-  // MTR stops (from routes data)
-  if (mtrData && mtrData.routes) {
+  // MTR
+  if (mtrData?.routes) {
     mtrData.routes.forEach(route => {
-      if (route.stops) {
-        route.stops.forEach(stop => {
-          if (!stopRoutesIndex.mtr[stop.STATION_ID]) stopRoutesIndex.mtr[stop.STATION_ID] = [];
-          if (!stopRoutesIndex.mtr[stop.STATION_ID].find(r => r.route === route.ROUTE_ID)) {
-            stopRoutesIndex.mtr[stop.STATION_ID].push({
-              route: route.ROUTE_ID,
-              route_name_tc: route.ROUTE_NAME_CHI || route.ROUTE_ID,
-              route_name_en: route.ROUTE_NAME_ENG || route.ROUTE_ID
-            });
-          }
-        });
-      }
-    });
-  }
-}
-
-// ==================== STOP LOADING ====================
-function loadOperatorStops(op) {
-  // Clear existing
-  kmbClusterGroup.clearLayers();
-  gmbMarkers.clearLayers();
-  mtrMarkers.clearLayers();
-  lwbMarkers.clearLayers();
-
-  const district = document.getElementById('district').value;
-  const districtFilter = district ? DISTRICT_BBOX[district] : null;
-
-  if (op === 'kmb' || op === 'all') {
-    if (kmbData && kmbData.kmb_stops) {
-      kmbData.kmb_stops.forEach(stop => {
-        if (districtFilter && !inDistrict(stop.lat, stop.long, districtFilter)) return;
-        const marker = createCircleMarker(stop.lat, stop.long, 'kmb', stop);
-        marker.on('click', () => showPopup(marker, stop, 'kmb'));
-        kmbClusterGroup.addLayer(marker);
-      });
-    }
-  }
-
-  if (op === 'kmb' || op === 'all') {
-    if (kmbData && kmbData.lwb_stops) {
-      kmbData.lwb_stops.forEach(stop => {
-        if (districtFilter && !inDistrict(stop.lat, stop.long, districtFilter)) return;
-        const marker = createCircleMarker(stop.lat, stop.long, 'lwb', stop);
-        marker.on('click', () => showPopup(marker, stop, 'lwb'));
-        lwbMarkers.addLayer(marker);
-      });
-    }
-  }
-
-  if (op === 'gmb' || op === 'all') {
-    if (gmbData && gmbData.stops) {
-      gmbData.stops.forEach(stop => {
-        if (districtFilter && !inDistrictGmb(stop, districtFilter)) return;
-        const marker = createCircleMarker(stop.lat[1] || stop.lat, stop.lng[1] || stop.lng, 'gmb', stop);
-        marker.on('click', () => showPopup(marker, stop, 'gmb'));
-        gmbMarkers.addLayer(marker);
-      });
-    }
-  }
-
-  if (op === 'mtr' || op === 'all') {
-    if (mtrData && mtrData.routes) {
-      const addedStops = new Set();
-      mtrData.routes.forEach(route => {
-        if (route.stops) {
-          route.stops.forEach(stop => {
-            if (addedStops.has(stop.STATION_ID)) return;
-            addedStops.add(stop.STATION_ID);
-            if (districtFilter && !inDistrict(stop.STATION_LATITUDE, stop.STATION_LONGITUDE, districtFilter)) return;
-            const marker = createCircleMarker(stop.STATION_LATITUDE, stop.STATION_LONGITUDE, 'mtr', stop);
-            marker.on('click', () => showPopup(marker, stop, 'mtr'));
-            mtrMarkers.addLayer(marker);
+      (route.stops||[]).forEach(stop => {
+        if (!stopRoutesIndex.mtr[stop.STATION_ID]) stopRoutesIndex.mtr[stop.STATION_ID] = [];
+        if (!stopRoutesIndex.mtr[stop.STATION_ID].find(r=>r.route===route.ROUTE_ID)) {
+          stopRoutesIndex.mtr[stop.STATION_ID].push({
+            route: route.ROUTE_ID,
+            dest_tc: route.ROUTE_NAME_CHI || route.ROUTE_ID,
+            dest_en: route.ROUTE_NAME_ENG || route.ROUTE_ID
           });
         }
       });
-    }
-  }
-
-  updateLegend();
-}
-
-function inDistrict(lat, lng, bbox) {
-  return lat >= bbox.latMin && lat <= bbox.latMax && lng >= bbox.lngMin && lng <= bbox.lngMax;
-}
-
-function inDistrictGmb(stop, bbox) {
-  const lat = stop.lat[1] || stop.lat;
-  const lng = stop.lng[1] || stop.lng;
-  return lat >= bbox.latMin && lat <= bbox.latMax && lng >= bbox.lngMin && lng <= bbox.lngMax;
-}
-
-function createCircleMarker(lat, lng, operator, data) {
-  return L.circleMarker([lat, lng], {
-    radius: 8,
-    fillColor: COLORS[operator],
-    color: '#fff',
-    weight: 2,
-    opacity: 1,
-    fillOpacity: 0.8
-  });
-}
-
-// ==================== POPUP ====================
-function showPopup(marker, stop, operator) {
-  let nameTc, nameEn, stopId;
-  
-  if (operator === 'kmb' || operator === 'lwb') {
-    nameTc = stop.name_tc;
-    nameEn = stop.name_en;
-    stopId = stop.stop;
-  } else if (operator === 'mtr') {
-    nameTc = stop.STATION_NAME_CHI;
-    nameEn = stop.STATION_NAME_ENG;
-    stopId = stop.STATION_ID;
-  } else {
-    nameTc = stop.name_tc || stop.name_en || '小巴站';
-    nameEn = stop.name_en || stop.name_tc || 'GMB Stop';
-    stopId = stop.stop_id;
-  }
-
-  const routes = stopRoutesIndex[operator]?.[stopId] || [];
-  const displayRoutes = routes.slice(0, 10);
-  
-  let routesHtml = '';
-  if (displayRoutes.length > 0) {
-    routesHtml = '<div class="routes-title">途經路線：</div>';
-    displayRoutes.forEach(r => {
-      const dest = operator === 'mtr' ? r.route_name_tc : (r.dest_tc || r.route);
-      routesHtml += `<div class="route-item"><span class="route-code">${r.route}</span><span class="route-dest">→ ${dest}</span></div>`;
-    });
-    if (routes.length > 10) {
-      routesHtml += `<div class="more-routes">更多... (共${routes.length}條路線)</div>`;
-    }
-  }
-
-  let etaHtml = '';
-  if (operator === 'kmb' || operator === 'lwb') {
-    etaHtml = `<div class="eta-section"><div class="eta-title">即時到站：</div><div class="eta-loading">載入中...</div></div>`;
-  } else if (operator === 'gmb') {
-    etaHtml = `<div class="eta-section"><div class="no-eta">即時到站資料暫不可用</div></div>`;
-  } else {
-    etaHtml = `<div class="eta-section"><div class="no-eta">即時到站資料暫不可用</div></div>`;
-  }
-
-  const content = `
-    <div class="popup-content">
-      <h3>${nameTc}</h3>
-      <div class="name-en">${nameEn}</div>
-      ${routesHtml}
-      ${etaHtml}
-    </div>
-  `;
-
-  marker.bindPopup(content, { maxWidth: 300 }).openPopup();
-
-  // Fetch ETA for KMB/LWB
-  if ((operator === 'kmb' || operator === 'lwb') && routes.length > 0) {
-    fetchEtas(stopId, operator, routes);
-  }
-}
-
-// ==================== ETA ====================
-async function fetchEtas(stopId, operator, routes) {
-  const cacheKey = `${stopId}_${operator}`;
-  const now = Date.now();
-  
-  // Check cache
-  if (etaCache[cacheKey] && now - etaCache[cacheKey].timestamp < 30000) {
-    updateEtaDisplay(stopId, operator, etaCache[cacheKey].data);
-    return;
-  }
-
-  const etaPromises = routes.slice(0, 5).map(r => {
-    const [route, bound, svcType] = r.key.split('|');
-    return fetchEtaForRoute(stopId, route, svcType || '1', operator);
-  });
-
-  try {
-    const results = await Promise.allSettled(etaPromises);
-    const allEtas = [];
-    results.forEach((result, i) => {
-      if (result.status === 'fulfilled' && result.value) {
-        allEtas.push({ route: routes[i].route, etas: result.value });
-      }
-    });
-
-    etaCache[cacheKey] = { data: allEtas, timestamp: now };
-    updateEtaDisplay(stopId, operator, allEtas);
-
-    // Set refresh timer
-    if (etaRefreshTimers[cacheKey]) clearTimeout(etaRefreshTimers[cacheKey]);
-    etaRefreshTimers[cacheKey] = setTimeout(() => fetchEtas(stopId, operator, routes), 30000);
-
-  } catch (err) {
-    console.error('ETA fetch error:', err);
-  }
-}
-
-async function fetchEtaForRoute(stopId, route, serviceType, operator) {
-  try {
-    const url = `https://data.etabus.gov.hk/v1/transport/kmb/eta/${stopId}/${route}/${serviceType}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.data?.slice(0, 3) || [];
-  } catch (err) {
-    return null;
-  }
-}
-
-function updateEtaDisplay(stopId, operator, etas) {
-  const popup = document.querySelector('.leaflet-popup-content');
-  if (!popup) return;
-
-  const stop = etas;
-  let html = '<div class="eta-section"><div class="eta-title">即時到站：</div>';
-
-  if (!etas || etas.length === 0) {
-    html += '<div class="eta-error">暫無到站資料</div></div>';
-  } else {
-    etas.forEach(group => {
-      html += `<div style="margin:5px 0;"><b>${group.route}:</b>`;
-      if (group.etas.length === 0) {
-        html += ' <span class="eta-error">無資料</span>';
-      } else {
-        group.etas.forEach(eta => {
-          const mins = Math.round(new Date(eta.eta).getTime() / 60000);
-          const rmk = eta.rmk_tc || eta.rmk_en || '';
-          html += `<div class="eta-item">${mins} 分鐘 ${rmk ? '(' + rmk + ')' : ''}</div>`;
-        });
-      }
-      html += '</div>';
     });
   }
-
-  html += '</div>';
-  
-  const existingSection = popup.querySelector('.eta-section');
-  if (existingSection) {
-    existingSection.innerHTML = html;
-  }
+  // GMB has no route-stop mapping, only WFS stops
 }
-
-// ==================== SEARCH ====================
-let allStopNames = [];
 
 function buildSearchIndex() {
   allStopNames = [];
-
-  if (kmbData) {
-    if (kmbData.kmb_stops) {
-      kmbData.kmb_stops.forEach(s => {
-        allStopNames.push({ 
-          name_tc: s.name_tc, 
-          name_en: s.name_en, 
-          stopId: s.stop, 
-          operator: 'kmb',
-          lat: s.lat,
-          lng: s.long
-        });
-      });
-    }
-    if (kmbData.lwb_stops) {
-      kmbData.lwb_stops.forEach(s => {
-        allStopNames.push({ 
-          name_tc: s.name_tc, 
-          name_en: s.name_en, 
-          stopId: s.stop, 
-          operator: 'lwb',
-          lat: s.lat,
-          lng: s.long
-        });
-      });
-    }
-  }
-
-  if (mtrData && mtrData.routes) {
-    const seen = new Set();
-    mtrData.routes.forEach(r => {
-      if (r.stops) {
-        r.stops.forEach(s => {
-          if (seen.has(s.STATION_ID)) return;
-          seen.add(s.STATION_ID);
-          allStopNames.push({ 
-            name_tc: s.STATION_NAME_CHI, 
-            name_en: s.STATION_NAME_ENG, 
-            stopId: s.STATION_ID, 
-            operator: 'mtr',
-            lat: s.STATION_LATITUDE,
-            lng: s.STATION_LONGITUDE
-          });
-        });
-      }
-    });
-  }
-
-  if (gmbData && gmbData.stops) {
-    gmbData.stops.forEach(s => {
-      allStopNames.push({ 
-        name_tc: s.name_tc || s.name_en || '小巴站', 
-        name_en: s.name_en || s.name_tc || 'GMB Stop', 
-        stopId: s.stop_id, 
-        operator: 'gmb',
-        lat: s.lat[1] || s.lat,
-        lng: s.lng[1] || s.lng
+  
+  const addStops = (stops, op, getLat, getLng, getNameTc, getNameEn, getId) => {
+    stops.forEach(s => {
+      const id = getId(s), lat = getLat(s), lng = getLng(s);
+      if (!id || !lat || !lng) return;
+      allStopNames.push({
+        name_tc: getNameTc(s), name_en: getNameEn(s),
+        stopId: id, operator: op, lat, lng
       });
     });
+  };
+  
+  if (kmbData?.kmb_stops) addStops(
+    kmbData.kmb_stops, 'kmb',
+    s=>parseFloat(s.lat), s=>parseFloat(s.long),
+    s=>s.name_tc, s=>s.name_en, s=>s.stop
+  );
+  if (kmbData?.lwb_stops) addStops(
+    kmbData.lwb_stops, 'lwb',
+    s=>parseFloat(s.lat), s=>parseFloat(s.long),
+    s=>s.name_tc, s=>s.name_en, s=>s.stop
+  );
+  if (mtrData?.routes) {
+    const seen=new Set();
+    mtrData.routes.forEach(r=>(r.stops||[]).forEach(s=>{
+      if(seen.has(s.STATION_ID))return; seen.add(s.STATION_ID);
+      allStopNames.push({
+        name_tc:s.STATION_NAME_CHI, name_en:s.STATION_NAME_ENG,
+        stopId:s.STATION_ID, operator:'mtr',
+        lat:parseFloat(s.STATION_LATITUDE), lng:parseFloat(s.STATION_LONGITUDE)
+      });
+    }));
+  }
+  if (gmbData?.stops) addStops(
+    gmbData.stops, 'gmb',
+    s=>parseFloat(Array.isArray(s.lat)?s.lat[1]:s.lat),
+    s=>parseFloat(Array.isArray(s.lng)?s.lng[1]:s.lng),
+    s=>s.name_tc||s.name_en||'小巴站',
+    s=>s.name_en||s.name_tc||'GMB Stop',
+    s=>s.stop_id
+  );
+}
+
+// ============ COUNTS ============
+function updateCounts() {
+  const kmbN = kmbData?.kmb_stops?.length||0;
+  const lwbN = kmbData?.lwb_stops?.length||0;
+  const gmbN = gmbData?.stops?.length||0;
+  const mtrN = mtrData?.metadata?.unique_stops||0;
+  
+  document.getElementById('cnt-kmb').textContent = `(${kmbN})`;
+  document.getElementById('cnt-lwb').textContent = `(${lwbN})`;
+  document.getElementById('cnt-gmb').textContent = `(${gmbN})`;
+  document.getElementById('cnt-mtr').textContent = `(${mtrN})`;
+  
+  document.getElementById('leg-kmb').textContent = `(${kmbN})`;
+  document.getElementById('leg-lwb').textContent = `(${lwbN})`;
+  document.getElementById('leg-gmb').textContent = `(${gmbN})`;
+  document.getElementById('leg-mtr').textContent = `(${mtrN})`;
+}
+
+// ============ MAP LOADING ============
+function inDistrict(lat, lng, bbox) {
+  return lat>=bbox.latMin && lat<=bbox.latMax && lng>=bbox.lngMin && lng<=bbox.lngMax;
+}
+
+function loadStops() {
+  kmbCluster.clearLayers();
+  lwbMarkers.clearLayers();
+  gmbMarkers.clearLayers();
+  mtrMarkers.clearLayers();
+  
+  const bbox = currentDistrict ? DISTRICT_BBOX[currentDistrict] : null;
+  
+  if ((activeOps.has('kmb') || activeOps.has('lwb')) && kmbData) {
+    const allStops = [
+      ...(activeOps.has('kmb') ? (kmbData.kmb_stops||[]).map(s=>({...s,_op:'kmb'})) : []),
+      ...(activeOps.has('lwb') ? (kmbData.lwb_stops||[]).map(s=>({...s,_op:'lwb'})) : [])
+    ];
+    
+    allStops.forEach(stop => {
+      if (bbox && !inDistrict(parseFloat(stop.lat), parseFloat(stop.long), bbox)) return;
+      const m = L.circleMarker([stop.lat, stop.long], {
+        radius: 7, fillColor: COLORS[stop._op], color:'#fff', weight:1.5, fillOpacity:0.85
+      });
+      m.on('click', ()=>openPopup(m, stop, stop._op));
+      kmbCluster.addLayer(m);
+    });
+  }
+  
+  if (activeOps.has('gmb') && gmbData?.stops) {
+    gmbData.stops.forEach(stop => {
+      const lat = Array.isArray(stop.lat)?stop.lat[1]:stop.lat;
+      const lng = Array.isArray(stop.lng)?stop.lng[1]:stop.lng;
+      if (!lat||!lng) return;
+      if (bbox && !inDistrict(parseFloat(lat), parseFloat(lng), bbox)) return;
+      const m = L.circleMarker([lat, lng], {
+        radius:7, fillColor:COLORS.gmb, color:'#fff', weight:1.5, fillOpacity:0.85
+      });
+      m.on('click', ()=>openPopup(m, stop, 'gmb'));
+      gmbMarkers.addLayer(m);
+    });
+  }
+  
+  if (activeOps.has('mtr') && mtrData?.routes) {
+    const seen=new Set();
+    mtrData.routes.forEach(route=>(route.stops||[]).forEach(stop=>{
+      if(seen.has(stop.STATION_ID))return; seen.add(stop.STATION_ID);
+      if(bbox && !inDistrict(parseFloat(stop.STATION_LATITUDE), parseFloat(stop.STATION_LONGITUDE), bbox))return;
+      const m = L.circleMarker([stop.STATION_LATITUDE, stop.STATION_LONGITUDE], {
+        radius:7, fillColor:COLORS.mtr, color:'#fff', weight:1.5, fillOpacity:0.85
+      });
+      m.on('click', ()=>openPopup(m, stop, 'mtr'));
+      mtrMarkers.addLayer(m);
+    }));
   }
 }
 
-function searchStops(query) {
-  if (!query || query.length < 1) return [];
-  const q = query.toLowerCase();
-  return allStopNames.filter(s => 
-    s.name_tc.toLowerCase().includes(q) || 
-    s.name_en.toLowerCase().includes(q)
-  ).slice(0, 20);
+// ============ POPUP ============
+let activePopup = null;
+let selectedRoutes = new Map(); // popupKey -> selectedRouteKeys
+
+function openPopup(marker, stop, op) {
+  const key = `${op}_${getStopId(stop, op)}`;
+  
+  let nameTc, nameEn, stopId;
+  if (op==='kmb'||op==='lwb') { nameTc=stop.name_tc; nameEn=stop.name_en; stopId=stop.stop; }
+  else if (op==='mtr') { nameTc=stop.STATION_NAME_CHI; nameEn=stop.STATION_NAME_ENG; stopId=stop.STATION_ID; }
+  else { nameTc=stop.name_tc||stop.name_en||'小巴站'; nameEn=stop.name_en||stop.name_tc||'GMB'; stopId=stop.stop_id; }
+  
+  const routes = (stopRoutesIndex[op]||{})[stopId]||[];
+  const selRoutes = selectedRoutes.get(key) || routes.slice(0,5).map(r=>r.key||r.route);
+  selectedRoutes.set(key, selRoutes);
+  
+  const content = buildPopupContent(key, nameTc, nameEn, stopId, op, routes, selRoutes);
+  activePopup = {key, stopId, op, routes, marker};
+  marker.bindPopup(content, {maxWidth:340, closeButton:true}).openPopup();
+}
+
+function getStopId(stop, op) {
+  if (op==='kmb'||op==='lwb') return stop.stop;
+  if (op==='mtr') return stop.STATION_ID;
+  return stop.stop_id;
+}
+
+function buildPopupContent(key, nameTc, nameEn, stopId, op, routes, selRoutes) {
+  const chipColor = COLORS[op]||'#888';
+  
+  // Route chips
+  let chipsHtml = '';
+  if (routes.length > 0) {
+    chipsHtml = '<div class="route-chips">';
+    routes.slice(0,12).forEach(r => {
+      const rk = r.key||r.route;
+      const isSel = selRoutes.includes(rk);
+      chipsHtml += `<span class="route-chip" style="background:${chipColor};" data-key="${rk}" data-op="${op}" data-stop="${stopId}">${r.route}</span>`;
+    });
+    if (routes.length > 12) chipsHtml += `<span class="route-chip" style="background:#ccc;">+${routes.length-12}</span>`;
+    chipsHtml += '</div>';
+  }
+  
+  // ETA area
+  let etaHtml = `<div class="eta-section" id="eta-${key}"><div class="eta-loading">載入中...</div></div>`;
+  
+  return `<div class="popup-inner">
+    <div class="popup-header">
+      <div>
+        <div class="stop-name">${nameTc}</div>
+        <div class="stop-op" style="background:${chipColor};">${OP_NAMES[op]||op}</div>
+      </div>
+      <div class="stop-en">${nameEn}</div>
+    </div>
+    ${chipsHtml}
+    ${etaHtml}
+  </div>`;
+}
+
+// ============ ETA ============
+async function fetchEtas(stopId, op, routes, key) {
+  const cacheKey = `${op}_${stopId}`;
+  const now = Date.now();
+  
+  if (etaCache[cacheKey] && now - etaCache[cacheKey].ts < 25000) {
+    renderEtas(key, op, stopId, etaCache[cacheKey].data);
+    return;
+  }
+  
+  if (op==='gmb'||op==='mtr') {
+    renderEtas(key, op, stopId, []);
+    return;
+  }
+  
+  const apiBase = 'https://data.etabus.gov.hk/v1/transport';
+  const topRoutes = routes.slice(0,4);
+  
+  try {
+    const results = await Promise.allSettled(topRoutes.map(r => {
+      const [route, bound, svc] = (r.key||r.route).split('|');
+      const url = `${apiBase}/kmb/eta/${stopId}/${route}/${svc||'1'}`;
+      return fetch(url).then(res=>res.json()).then(d=>({route:r.route, dest_tc:r.dest_tc, etas:d.data?.slice(0,3)||[]})).catch(()=>null);
+    }));
+    
+    const valid = results.filter(r=>r.status==='fulfilled'&&r.value).map(r=>r.value);
+    etaCache[cacheKey] = {data:valid, ts:now};
+    renderEtas(key, op, stopId, valid);
+    
+    // Refresh
+    if (etaTimers[cacheKey]) clearTimeout(etaTimers[cacheKey]);
+    etaTimers[cacheKey] = setTimeout(()=>fetchEtas(stopId,op,routes,key), 30000);
+    
+  } catch(e) {
+    renderEtas(key, op, stopId, []);
+  }
+}
+
+function etaChipClass(mins) {
+  if (mins === null || mins === undefined) return 'none';
+  if (mins <= 10) return 'soon';
+  if (mins <= 20) return 'medium';
+  return 'late';
+}
+
+function formatEta(mins) {
+  if (mins === null || mins === undefined) return '—';
+  if (mins < 1) return '即將';
+  return `${mins}分`;
+}
+
+function renderEtas(key, op, stopId, data) {
+  const el = document.getElementById(`eta-${key}`);
+  if (!el) return;
+  
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div class="eta-section-title">即時到站</div><div class="eta-no-data">暫無到站資料</div>`;
+    return;
+  }
+  
+  let html = `<div class="eta-section-title">即時到站</div>`;
+  data.forEach(group => {
+    html += `<div class="eta-route-group">`;
+    html += `<div class="eta-route-header"><span class="eta-route-name">${group.route}</span><span class="eta-route-dest">→ ${group.dest_tc||''}</span></div>`;
+    html += `<div class="eta-times">`;
+    
+    if (!group.etas || group.etas.length === 0) {
+      html += `<span class="eta-chip none">無班次</span>`;
+    } else {
+      group.etas.forEach(e => {
+        const ts = e.eta ? new Date(e.eta).getTime() : null;
+        const mins = ts ? Math.round((ts - Date.now())/60000) : null;
+        const cls = mins!==null && mins<0 ? 'none' : etaChipClass(mins);
+        const txt = mins!==null && mins<0 ? '已開出' : formatEta(mins);
+        html += `<span class="eta-chip ${cls}">${txt}</span>`;
+      });
+    }
+    html += `</div></div>`;
+  });
+  
+  el.innerHTML = html;
+  
+  // Route chip click → re-render with selected route
+  el.querySelectorAll('.route-chip[data-key]').forEach(chip=>{
+    chip.onclick = () => {
+      const k = chip.dataset.key;
+      const sId = chip.dataset.stop;
+      const o = chip.dataset.op;
+      const routes = (stopRoutesIndex[o]||{})[sId]||[];
+      const selRoutes = [k];
+      selectedRoutes.set(`${o}_${sId}`, selRoutes);
+      // Re-open popup
+      const newContent = buildPopupContent(`${o}_${sId}`, '', '', sId, o, routes, selRoutes);
+      if (activePopup?.marker) {
+        activePopup.marker.setPopupContent(newContent);
+      }
+    };
+  });
+}
+
+// ============ SEARCH ============
+function searchStops(q) {
+  if (!q || q.length < 1) return [];
+  const lc = q.toLowerCase();
+  return allStopNames.filter(s=>s.name_tc.toLowerCase().includes(lc)||s.name_en.toLowerCase().includes(lc)).slice(0,15);
 }
 
 function showAutocomplete(results) {
-  const container = document.getElementById('autocomplete');
-  if (results.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-
-  container.innerHTML = results.map(r => `
+  const box = document.getElementById('autocomplete');
+  if (results.length === 0) { box.style.display='none'; return; }
+  
+  box.innerHTML = results.map(r=>`
     <div class="autocomplete-item" data-lat="${r.lat}" data-lng="${r.lng}" data-stopid="${r.stopId}" data-op="${r.operator}">
-      <div class="name-tc">${r.name_tc}</div>
-      <div class="name-en">${r.name_en}</div>
+      <div><div class="name-tc">${r.name_tc}</div><div class="name-en">${r.name_en}</div></div>
+      <span class="op-badge" style="background:${COLORS[r.operator]};">${OP_NAMES[r.operator]}</span>
     </div>
   `).join('');
-
-  container.style.display = 'block';
-
-  container.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const lat = parseFloat(item.dataset.lat);
-      const lng = parseFloat(item.dataset.lng);
-      map.setView([lat, lng], 16);
-      container.style.display = 'none';
-      document.getElementById('search').value = '';
-    });
-  });
-}
-
-// ==================== GPS ====================
-function findNearestStops(lat, lng) {
-  clearNearestMarkers();
-
-  const allStops = [];
   
-  if (kmbData && kmbData.kmb_stops) {
-    kmbData.kmb_stops.forEach(s => {
-      allStops.push({ ...s, operator: 'kmb', lat: parseFloat(s.lat), lng: parseFloat(s.long) });
-    });
-  }
-  if (kmbData && kmbData.lwb_stops) {
-    kmbData.lwb_stops.forEach(s => {
-      allStops.push({ ...s, operator: 'lwb', lat: parseFloat(s.lat), lng: parseFloat(s.long) });
-    });
-  }
-  if (gmbData && gmbData.stops) {
-    gmbData.stops.forEach(s => {
-      allStops.push({ 
-        ...s, 
-        operator: 'gmb', 
-        lat: parseFloat(s.lat[1] || s.lat), 
-        lng: parseFloat(s.lng[1] || s.lng) 
-      });
-    });
-  }
-  if (mtrData && mtrData.routes) {
-    const seen = new Set();
-    mtrData.routes.forEach(r => {
-      if (r.stops) {
-        r.stops.forEach(s => {
-          if (seen.has(s.STATION_ID)) return;
-          seen.add(s.STATION_ID);
-          allStops.push({ 
-            ...s, 
-            operator: 'mtr', 
-            lat: parseFloat(s.STATION_LATITUDE), 
-            lng: parseFloat(s.STATION_LONGITUDE) 
-          });
-        });
-      }
-    });
-  }
-
-  // Calculate distances and sort
-  allStops.forEach(s => {
-    s.distance = Math.sqrt(Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2));
-  });
-
-  const nearest = allStops.sort((a, b) => a.distance - b.distance).slice(0, 5);
-
-  nearest.forEach(s => {
-    const marker = L.circleMarker([s.lat, s.lng], {
-      radius: 12,
-      fillColor: '#fff',
-      color: COLORS[s.operator],
-      weight: 4,
-      opacity: 1,
-      fillOpacity: 0.9
-    }).addTo(map);
-    nearestMarkers.push(marker);
+  box.style.display = 'block';
+  box.querySelectorAll('.autocomplete-item').forEach(item=>{
+    item.onclick = () => {
+      map.setView([parseFloat(item.dataset.lat), parseFloat(item.dataset.lng)], 16);
+      box.style.display = 'none';
+      document.getElementById('search').value = '';
+    };
   });
 }
 
-function clearNearestMarkers() {
-  nearestMarkers.forEach(m => map.removeLayer(m));
-  nearestMarkers = [];
+// ============ GPS ============
+function findNearest(lat, lng) {
+  clearNearest();
+  const all = [];
+  if (kmbData?.kmb_stops && activeOps.has('kmb')) kmbData.kmb_stops.forEach(s=>all.push({...s,_op:'kmb',lat:parseFloat(s.lat),lng:parseFloat(s.long)}));
+  if (kmbData?.lwb_stops && activeOps.has('lwb')) kmbData.lwb_stops.forEach(s=>all.push({...s,_op:'lwb',lat:parseFloat(s.lat),lng:parseFloat(s.long)}));
+  if (gmbData?.stops && activeOps.has('gmb')) gmbData.stops.forEach(s=>{const lat2=Array.isArray(s.lat)?s.lat[1]:s.lat,lng2=Array.isArray(s.lng)?s.lng[1]:s.lng;if(lat2&&lng2)all.push({...s,_op:'gmb',lat:parseFloat(lat2),lng:parseFloat(lng2)});});
+   if (mtrData?.routes && activeOps.has('mtr')){const seen=new Set();mtrData.routes.forEach(r=>(r.stops||[]).forEach(s=>{if(seen.has(s.STATION_ID))return;seen.add(s.STATION_ID);all.push({...s,_op:'mtr',lat:parseFloat(s.STATION_LATITUDE),lng:parseFloat(s.STATION_LONGITUDE)}));}));}
+  
+  all.forEach(s=>{ s.dist=Math.sqrt(Math.pow(s.lat-lat,2)+Math.pow(s.lng-lng,2)); });
+  const nearest = all.sort((a,b)=>a.dist-b.dist).slice(0,5);
+  
+  nearest.forEach(s=>{
+    const m = L.circleMarker([s.lat,s.lng],{radius:12,fillColor:'#fff',color:COLORS[s._op],weight:4,fillOpacity:0.9}).addTo(map);
+    nearestMarkers.push(m);
+  });
 }
 
-// ==================== LEGEND ====================
-function updateLegend() {
-  document.getElementById('kmb-count').textContent = `(${(kmbData?.kmb_stops?.length || 0)})`;
-  document.getElementById('gmb-count').textContent = `(${(gmbData?.stops?.length || 0)})`;
-  document.getElementById('mtr-count').textContent = `(${(mtrData?.metadata?.unique_stops || 0)})`;
-  document.getElementById('lwb-count').textContent = `(${(kmbData?.lwb_stops?.length || 0)})`;
+function clearNearest() {
+  nearestMarkers.forEach(m=>map.removeLayer(m));
+  nearestMarkers=[];
 }
 
-// ==================== EVENT LISTENERS ====================
-function setupEventListeners() {
-  // Tabs
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentOperator = tab.dataset.op;
-      
-      const districtFilter = document.getElementById('district-filter');
-      districtFilter.style.display = (currentOperator === 'kmb' || currentOperator === 'all') ? 'block' : 'none';
-      
-      loadOperatorStops(currentOperator);
+// ============ EVENTS ============
+function setupEvents() {
+  // Operator toggles
+  document.querySelectorAll('.op-toggle').forEach(toggle=>{
+    toggle.addEventListener('click', ()=>{
+      const op = toggle.dataset.op;
+      toggle.classList.toggle('active');
+      if (activeOps.has(op)) activeOps.delete(op); else activeOps.add(op);
+      loadStops();
     });
   });
-
+  
+  // District pills
+  document.querySelectorAll('.district-pill').forEach(pill=>{
+    pill.addEventListener('click', ()=>{
+      document.querySelectorAll('.district-pill').forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+      currentDistrict = pill.dataset.dist;
+      loadStops();
+    });
+  });
+  
   // Search
   const searchInput = document.getElementById('search');
-  const autocomplete = document.getElementById('autocomplete');
-
-  searchInput.addEventListener('input', (e) => {
-    const results = searchStops(e.target.value);
-    showAutocomplete(results);
+  const autoBox = document.getElementById('autocomplete');
+  let searchTimer;
+  searchInput.addEventListener('input', e=>{
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=>showAutocomplete(searchStops(e.target.value)), 150);
   });
-
-  searchInput.addEventListener('blur', () => {
-    setTimeout(() => autocomplete.style.display = 'none', 200);
-  });
-
-  searchInput.addEventListener('focus', () => {
-    if (searchInput.value) {
+  searchInput.addEventListener('blur', ()=>setTimeout(()=>autoBox.style.display='none', 200));
+  searchInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter') {
       const results = searchStops(searchInput.value);
-      showAutocomplete(results);
+      if(results.length>0) {
+        const r=results[0];
+        map.setView([parseFloat(r.lat),parseFloat(r.lng)],16);
+        autoBox.style.display='none';
+        searchInput.value='';
+      }
     }
   });
-
-  // District filter
-  document.getElementById('district').addEventListener('change', () => {
-    loadOperatorStops(currentOperator);
+  
+  // GPS
+  const gpsBtn = document.getElementById('gps-btn');
+  let gpsActive=false;
+  gpsBtn.addEventListener('click', ()=>{
+    if(!navigator.geolocation){alert('不支援定位');return;}
+    if(gpsActive){clearNearest();if(userMarker){map.removeLayer(userMarker);userMarker=null;}gpsBtn.classList.remove('active');gpsBtn.textContent='📍 顯示我的位置';gpsActive=false;return;}
+    gpsBtn.textContent='📍 定位中...';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const loc=[pos.coords.latitude,pos.coords.longitude];
+      if(userMarker) map.removeLayer(userMarker);
+      userMarker=L.circleMarker(loc,{radius:10,fillColor:'#3498db',color:'#fff',weight:3,fillOpacity:1}).addTo(map).bindPopup('您的位置');
+      map.setView(loc,15);
+      findNearest(loc[0],loc[1]);
+      gpsBtn.classList.add('active');gpsBtn.textContent='📍 清除位置';gpsActive=true;
+    },err=>{alert('無法取得位置');gpsBtn.textContent='📍 顯示我的位置';},{enableHighAccuracy:true,timeout:10000});
   });
-
-  // GPS button
-  document.getElementById('gps-btn').addEventListener('click', () => {
-    const btn = document.getElementById('gps-btn');
+  
+  // Popup open → fetch ETA
+  map.on('popupopen', e=>{
+    const popup = e.popup;
+    const content = popup.getElement();
+    if (!content) return;
+    // Find stop info from popup content
+    const inner = content.querySelector('.popup-inner');
+    if (!inner) return;
+    const chip = inner.querySelector('.route-chip[data-key]');
+    if (!chip) return;
     
-    if (!navigator.geolocation) {
-      alert('您的瀏覽器不支援定位功能');
-      return;
-    }
-
-    btn.classList.add('active');
-    btn.textContent = '📍 定位中...';
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        userLocation = [pos.coords.latitude, pos.coords.longitude];
-        map.setView(userLocation, 15);
-
-        // Add user marker
-        L.circleMarker(userLocation, {
-          radius: 10,
-          fillColor: '#3498db',
-          color: '#fff',
-          weight: 3,
-          fillOpacity: 1
-        }).addTo(map).bindPopup('您的位置');
-
-        findNearestStops(userLocation[0], userLocation[1]);
-        btn.textContent = '📍 已定位 (清除)';
-      },
-      (err) => {
-        alert('無法取得位置：' + err.message);
-        btn.classList.remove('active');
-        btn.textContent = '📍 顯示我的位置';
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-
-    // Toggle off on second click
-    if (btn.dataset.active === 'true') {
-      clearNearestMarkers();
-      btn.classList.remove('active');
-      btn.textContent = '📍 顯示我的位置';
-      btn.dataset.active = 'false';
-    } else {
-      btn.dataset.active = 'true';
-    }
+    const op = chip.dataset.op;
+    const stopId = chip.dataset.stop;
+    const routes = (stopRoutesIndex[op]||{})[stopId]||[];
+    const key = `${op}_${stopId}`;
+    
+    // Add click handlers to chips
+    inner.querySelectorAll('.route-chip[data-key]').forEach(c=>{
+      c.addEventListener('click', ()=>{
+        const k = c.dataset.key;
+        const sId = c.dataset.stop;
+        const o = c.dataset.op;
+        const rts = (stopRoutesIndex[o]||{})[sId]||[];
+        const newSel = [k];
+        selectedRoutes.set(`${o}_${sId}`, newSel);
+        const nc = buildPopupContent(`${o}_${sId}`,'','',sId,o,rts,newSel);
+        popup.setContent(nc);
+        fetchEtas(sId,o,rts,`${o}_${sId}`);
+      });
+    });
+    
+    fetchEtas(stopId, op, routes, key);
   });
-
-  // Build search index after data load
-  buildSearchIndex();
 }
 
-// ==================== START ====================
+// ============ START ============
 init();
 </script>
 </body>
