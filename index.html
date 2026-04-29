@@ -147,8 +147,55 @@
   .fc-btn:active { background: #e0e0e0; }
 
   /* Legend */
+  /* P1-A: Nearest ETA bar */
+  .nearest-eta-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 1100;
+    background: linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+    backdrop-filter: blur(12px);
+    border-top: 2px solid #e0e0e0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+    padding: 10px 12px 16px; /* extra bottom for mobile safe area */
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .nearest-eta-bar.hidden { display: none; }
+  .nearest-eta-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .nearest-eta-title { font-size: 12px; font-weight: 700; color: #333; }
+  .nearest-eta-hint { font-size: 10px; color: #aaa; }
+  .nearest-eta-cards {
+    display: flex; gap: 8px;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .nearest-eta-cards::-webkit-scrollbar { height: 0; }
+  .nearest-card {
+    flex: 0 0 140px; scroll-snap-align: start;
+    background: white; border-radius: 12px;
+    border: 1.5px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 10px 12px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    min-width: 140px;
+  }
+  .nearest-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .nearest-card:active { transform: translateY(0); }
+  .nearest-card-dist { font-size: 10px; color: #aaa; margin-bottom: 4px; }
+  .nearest-card-name { font-size: 13px; font-weight: 700; color: #222; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nearest-card-eta { display: flex; align-items: center; gap: 4px; }
+  .nearest-card-route { font-size: 11px; font-weight: 600; color: white; padding: 2px 6px; border-radius: 6px; }
+  .nearest-card-time { font-size: 14px; font-weight: 800; }
+  .nearest-card-time.soon { color: #1B5E20; }
+  .nearest-card-time.medium { color: #E65100; }
+  .nearest-card-time.late { color: #B71C1C; }
+  .nearest-card-loading { font-size: 11px; color: #aaa; }
+  .nearest-card-noeta { font-size: 11px; color: #999; }
   .legend {
-    position: absolute; bottom: 30px; right: 10px;
+    position: absolute; bottom: 160px; right: 10px;
     z-index: 1000; background: white;
     border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     padding: 10px 14px; font-size: 12px; min-width: 160px;
@@ -343,6 +390,15 @@
 </div>
 
 <div id="map"></div>
+
+<!-- P1-A: Bottom nearest-ETA dock — shows Top-1 ETA for 5 nearest stops -->
+<div id="nearest-eta-bar" class="nearest-eta-bar hidden">
+  <div class="nearest-eta-header">
+    <span class="nearest-eta-title">📍 附近站點最近班次</span>
+    <span class="nearest-eta-hint">點擊卡片即時睇 ETA</span>
+  </div>
+  <div id="nearest-eta-cards" class="nearest-eta-cards"></div>
+</div>
 
 <div class="legend" id="legend">
   <div class="legend-title">圖例</div>
@@ -876,6 +932,15 @@ function renderEtas(key,op,stopId,data,ts,loading,error){
   // P0-B: Update "last update" timestamp in popup header
   const luEl=document.getElementById(`lu-${key}`);
   if(luEl&&ts){luEl.textContent=`更新 ${new Date(ts).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})}`;}
+  // P1-A: Also refresh the nearest ETA dock if this is a nearest stop
+  if(nearestCardsCache[key]&&data&&data.length>0){
+    const firstGroup=data[0];
+    const firstEta=firstGroup?.etas?.[0];
+    nearestCardsCache[key].topEta=firstEta?.mins??firstEta?.diff??null;
+    nearestCardsCache[key].topRoute=firstGroup?.route||nearestCardsCache[key].topRoute;
+    nearestCardsCache[key].loading=false;
+    renderNearestCards();
+  }
   el.querySelectorAll('.route-chip[data-key]').forEach(chip=>{
     chip.onclick=()=>{
       const k=chip.dataset.key,o=chip.dataset.op,sId=chip.dataset.stop;
@@ -933,8 +998,63 @@ function showAutocomplete(results){
     item.onclick=()=>{map.setView([parseFloat(item.dataset.lat),parseFloat(item.dataset.lng)],16);box.style.display='none';document.getElementById('search').value='';};
   });}
 
-// ============ GPS ============
-// P0-A: GPS 最近站顯示真實 ETA（Top-3路線），不再只顯示距離
+// ============ NEAREST ETA DOCK ============
+// P1-A: Render horizontal scrollable cards for all 5 nearest stops with Top-1 ETA
+const nearestCardsCache = {}; // stopKey -> {name, op, dist, routes, key}
+function etaCardClass(mins){
+  if(mins===null||mins===undefined)return'none';
+  if(mins<=10)return'soon';
+  if(mins<=20)return'medium';
+  return'late';
+}
+function formatCardEta(mins){
+  if(mins===null||mins===undefined)return'--';
+  if(mins<1)return'即';
+  if(mins<60)return`${mins}分`;
+  return`${Math.floor(mins/60)}h${mins%60}m`;
+}
+function renderNearestCards(){
+  const bar=document.getElementById('nearest-eta-bar');
+  const container=document.getElementById('nearest-eta-cards');
+  if(!bar||!container)return;
+  const entries=Object.values(nearestCardsCache);
+  if(entries.length===0){bar.classList.add('hidden');return;}
+  bar.classList.remove('hidden');
+  let html='';
+  entries.forEach((e,i)=>{
+    const color=COLORS[e.op]||'#888';
+    const distM=Math.round(e.dist*111000);
+    const chipColor=etaCardClass(e.topEta);
+    const timeTxt=formatCardEta(e.topEta);
+    html+=`<div class="nearest-card" onclick="openNearestCard('${e.key}',${i})">
+      <div class="nearest-card-dist">📍 ${distM}m</div>
+      <div class="nearest-card-name" title="${e.nameTc||e.nameEn}">${e.nameTc||e.nameEn||'站點'}</div>`;
+    if(e.topEta!==undefined){
+      html+=`<div class="nearest-card-eta">
+        <span class="nearest-card-route" style="background:${color};">${e.topRoute||'--'}</span>
+        <span class="nearest-card-time ${chipColor}">${timeTxt}</span>
+      </div>`;
+    } else if(e.loading){
+      html+=`<div class="nearest-card-loading">⏳ 載入中...</div>`;
+    } else {
+      html+=`<div class="nearest-card-noeta">無班次</div>`;
+    }
+    html+=`</div>`;
+  });
+  container.innerHTML=html;
+}
+window.openNearestCard=function(key,idx){
+  const entries=Object.values(nearestCardsCache);
+  const e=entries[idx];
+  if(!e)return;
+  map.setView([e.lat,e.lng],17);
+  if(e.markerRef&&e.markerRef.fire){setTimeout(()=>e.markerRef.fire('click'),200);}
+};
+function registerNearestMarker(key,marker){
+  if(nearestCardsCache[key]){nearestCardsCache[key].markerRef=marker;}
+}
+
+
 function findNearest(lat,lng){
   clearNearest();const all=[];
   if(kmbData?.kmb_stops&&activeOps.has('kmb'))kmbData.kmb_stops.forEach(s=>all.push({...s,_op:'kmb',lat:parseFloat(s.lat),lng:parseFloat(s.long)}));
@@ -945,6 +1065,8 @@ function findNearest(lat,lng){
   if(mtrData?.routes&&activeOps.has('mtr')){const seen=new Set();mtrData.routes.forEach(r=>(r.stops||[]).forEach(s=>{if(seen.has(s.STATION_ID))return;seen.add(s.STATION_ID);all.push({...s,_op:'mtr',lat:parseFloat(s.STATION_LATITUDE),lng:parseFloat(s.STATION_LONGITUDE)});}));}
   all.forEach(s=>{s.dist=Math.sqrt(Math.pow(s.lat-lat,2)+Math.pow(s.lng-lng,2));});
   const sorted=all.sort((a,b)=>a.dist-b.dist).slice(0,5);
+  // P1-A: Clear and repopulate nearestCardsCache
+  Object.keys(nearestCardsCache).forEach(k=>delete nearestCardsCache[k]);
   // 最近站：用 bus icon + 完整 popup（自動 fetch ETA）
   const nearest=sorted[0];
   if(nearest){
@@ -952,47 +1074,58 @@ function findNearest(lat,lng){
     const nameTc=nearest.name_tc||nearest.STATION_NAME_CHI||nearest.name_en||`${nearest._op} 站`;
     const nameEn=nearest.name_en||nearest.STATION_NAME_ENG||nearest.name_tc||`${nearest._op} Stop`;
     const routes=(stopRoutesIndex[nearest._op]||{})[stopId]||[];
-    // 自動預載最近站的 Top-3 路線 ETA
     const topRoutes=routes.slice(0,3);
     const key=`nearest_${stopId}`;
-    const chipColor=COLORS[nearest._op]||'#888';
-    // 用 divIcon 顯示綠色 GPS 站點標記（區分普通站點）
+    // Register in nearestCardsCache for dock
+    nearestCardsCache[key]={
+      key,nameTc,nameEn,
+      op:nearest._op,
+      dist:nearest.dist,
+      lat:nearest.lat,lng:nearest.lng,
+      routes:topRoutes,topRoute:topRoutes[0]?.route||topRoutes[0]?.key?.split('|')[0]||'',
+      topEta:undefined,loading:true,markerRef:null
+    };
     const gpsIcon=L.divIcon({
       html:`<div style="width:32px;height:32px;background:#00C853;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:white;">📍</div>`,
       className:'gps-nearest-icon',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-20]
     });
     const m=L.marker([nearest.lat,nearest.lng],{icon:gpsIcon}).addTo(map);
-    // 建立完整 popup（與普通站點相同格式）
+    registerNearestMarker(key,m);
     const content=buildPopupContent(key,nameTc,nameEn,stopId,nearest._op,routes,topRoutes.map(r=>r.key||r.route),false);
     m.bindPopup(content,{maxWidth:360,closeButton:true});
     nearestMarkers.push(m);
-    // 立即 fetch ETA（45秒 cache）
-    if(topRoutes.length>0){
-      fetchEtas(stopId,nearest._op,routes,key);
-    }
-    // 延遲 500ms 自動開啟 popup
+    if(topRoutes.length>0){fetchEtas(stopId,nearest._op,routes,key);}
     setTimeout(()=>m.openPopup(),500);
   }
-  // 其餘 4 個最近站：圓形標記，click 後開啟完整 popup
-  sorted.slice(1).forEach(s=>{
+  // 其餘 4 個最近站
+  sorted.slice(1).forEach((s,i)=>{
     const stopId=getStopId(s,s._op);
     const nameTc=s.name_tc||s.STATION_NAME_CHI||s.name_en||`${s._op} 站`;
     const nameEn=s.name_en||s.STATION_NAME_ENG||s.name_tc||`${s._op} Stop`;
     const routes=(stopRoutesIndex[s._op]||{})[stopId]||[];
-    const key=`nearest2_${stopId}`;
-    const chipColor=COLORS[s._op]||'#888';
+    const topRoutes=routes.slice(0,5);
+    const key=`nearest2_${stopId}_${i}`;
+    nearestCardsCache[key]={
+      key,nameTc,nameEn,
+      op:s._op,
+      dist:s.dist,
+      lat:s.lat,lng:s.lng,
+      routes:topRoutes,topRoute:topRoutes[0]?.route||topRoutes[0]?.key?.split('|')[0]||'',
+      topEta:undefined,loading:true,markerRef:null
+    };
     const m=L.circleMarker([s.lat,s.lng],{radius:10,fillColor:'#fff',color:COLORS[s._op],weight:3,fillOpacity:0.9}).addTo(map);
-    // click 後用 buildPopupContent + fetchEtas 顯示完整資訊
+    registerNearestMarker(key,m);
     m.on('click',()=>{
-      const topRoutes=routes.slice(0,5);
       const content=buildPopupContent(key,nameTc,nameEn,stopId,s._op,routes,topRoutes.map(r=>r.key||r.route),false);
       m.bindPopup(content,{maxWidth:360,closeButton:true}).openPopup();
       if(topRoutes.length>0)fetchEtas(stopId,s._op,routes,key);
     });
     nearestMarkers.push(m);
   });
+  // P1-A: Show the dock after all markers placed
+  renderNearestCards();
 }
-function clearNearest(){nearestMarkers.forEach(m=>map.removeLayer(m));nearestMarkers=[];}
+function clearNearest(){nearestMarkers.forEach(m=>map.removeLayer(m));nearestMarkers=[];Object.keys(nearestCardsCache).forEach(k=>delete nearestCardsCache[k]);const bar=document.getElementById('nearest-eta-bar');if(bar)bar.classList.add('hidden');}
 // ============ EVENTS ============
 function setupEvents(){
   document.querySelectorAll('.op-toggle').forEach(toggle=>{
