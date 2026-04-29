@@ -234,6 +234,17 @@
   .route-chip .route-dir {
     font-size: 10px; opacity: 0.8; margin-left: 2px;
   }
+  /* P1-B: ETA preview badge on route chip */
+  .route-chip .eta-preview {
+    font-size: 10px; font-weight: 600; opacity: 0.85;
+    margin-left: 4px; background: rgba(0,0,0,0.2);
+    padding: 0px 4px; border-radius: 6px;
+    min-width: 24px; text-align: center;
+    display: inline-block;
+  }
+  .route-chip .eta-preview.soon { background: rgba(27,94,32,0.5); }
+  .route-chip .eta-preview.medium { background: rgba(230,81,0,0.5); }
+  .route-chip .eta-preview.late { background: rgba(183,28,28,0.5); }
   /* Route chip direction badges */
   .route-chip[data-dir="1"]::after { content: '↑'; position: absolute; top: -6px; right: -4px; font-size: 10px; }
   .route-chip[data-dir="2"]::after { content: '↓'; position: absolute; top: -6px; right: -4px; font-size: 10px; }
@@ -729,7 +740,7 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
       const rk=r.key||r.route;
       const isSel=selRoutes.includes(rk);
       const dir=r.route_seq||r.dir||'';
-      chipsHtml+=`<span class="route-chip${isSel?' selected':''}" style="background:${chipColor};" data-key="${rk}" data-op="${op}" data-stop="${stopId}" data-dir="${dir}">${r.route}</span>`;
+      chipsHtml+=`<span class="route-chip${isSel?' selected':''}" style="background:${chipColor};" data-key="${rk}" data-op="${op}" data-stop="${stopId}" data-dir="${dir}">${r.route}<span class="eta-preview" data-route="${rk}">--</span></span>`;
     });
     if(routes.length>DISPLAY_LIMIT&&!isExpanded){
       chipsHtml+=`<span class="route-chip-more" data-key="${key}" data-total="${routes.length}">+${routes.length-DISPLAY_LIMIT} 更多</span>`;
@@ -899,7 +910,8 @@ function renderEtas(key,op,stopId,data,ts,loading,error){
   if(loading){el.innerHTML=`<div class="eta-loading"><div class="spinner"></div>載入中...</div>`;return;}
   if(error||(!data&&!ts)){el.innerHTML=`<div class="eta-error">⚠️ 無法取得到站資料<button class="eta-retry-btn" onclick="retryEta('${key}','${op}','${stopId}')">重試</button></div>`;return;}
   if(!data||data.length===0){
-    el.innerHTML=`<div class="eta-section-title">即時到站</div><div class="eta-no-data">暫無到站資料</div>`;return;
+    // P1-C: Show 尾班車已過 if we had data before (ts exists), else no data
+    el.innerHTML=`<div class="eta-section-title">即時到站</div><div class="eta-no-data">${ts?'🚌 尾班車已過':'暫無到站資料'}</div>`;return;
   }
   const updatedStr=ts?`更新 ${new Date(ts).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})}`:'';
   let html=`<div class="eta-section-title">即時到站<span class="eta-updated">${updatedStr}</span></div>`;
@@ -940,6 +952,18 @@ function renderEtas(key,op,stopId,data,ts,loading,error){
     nearestCardsCache[key].topRoute=firstGroup?.route||nearestCardsCache[key].topRoute;
     nearestCardsCache[key].loading=false;
     renderNearestCards();
+  }
+  // P1-B: Fill in eta-preview badges on route chips
+  if(data){
+    data.forEach(group=>{
+      const rk=group.route;
+      const firstEta=group.etas?.[0];
+      const mins=firstEta?.mins??firstEta?.diff??null;
+      const cls=mins!==null?(mins<=10?'soon':mins<=20?'medium':'late'):'';
+      const txt=mins!==null?(mins<1?'即':mins<60?`${mins}m`:`${Math.floor(mins/60)}h`):'';
+      const previewEl=document.querySelector(`.eta-preview[data-route="${rk}"]`);
+      if(previewEl){previewEl.textContent=txt;previewEl.className=`eta-preview ${cls}`;}
+    });
   }
   el.querySelectorAll('.route-chip[data-key]').forEach(chip=>{
     chip.onclick=()=>{
