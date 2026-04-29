@@ -1,0 +1,11 @@
+# Large CSDI raw downloads (use WFS/API instead)
+*.geojson
+*.zip
+*.gml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
