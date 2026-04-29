@@ -194,6 +194,37 @@
   }
   .route-chip-more:hover { background: #e0e0e0; color: #333; }
 
+  /* Bus icon markers */
+  .bus-icon {
+    width: 32px !important; height: 32px !important;
+    transition: transform 0.2s;
+  }
+  .bus-icon:hover { transform: scale(1.2) !important; z-index: 9999 !important; }
+  .bus-icon-inner {
+    width: 32px; height: 32px;
+    border-radius: 8px 8px 4px 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.5);
+    position: relative; overflow: hidden;
+    /* 3D bus body effect */
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 40%, rgba(0,0,0,0.15) 100%);
+  }
+  .bus-icon-inner::before {
+    content: ''; position: absolute; top: 3px; left: 3px; right: 3px; height: 8px;
+    background: rgba(255,255,255,0.4); border-radius: 3px 3px 0 0;
+  }
+  .bus-icon-inner::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+    background: rgba(0,0,0,0.3); border-radius: 0 0 2px 2px;
+  }
+  .bus-icon-text {
+    position: relative; z-index: 1; font-size: 12px; font-weight: 900; color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+
   /* ETA section */
   .eta-section { border-top: 1px solid #eee; padding-top: 10px; margin-top: 4px; }
   .eta-section-title {
@@ -458,6 +489,19 @@ function updateCounts(){
   document.getElementById('leg-gmb').textContent=`(${gmbN})`;document.getElementById('leg-mtr').textContent=`(${mtrN})`;
 }
 
+// ============ BUS ICON ============
+function createBusIcon(op, label){
+  const color=COLORS[op]||'#888';
+  const html=`<div style="position:relative;width:32px;height:32px;">
+    <div style="width:32px;height:32px;border-radius:8px 8px 4px 4px;background:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:white;box-shadow:0 3px 8px rgba(0,0,0,0.4),inset 0 -4px 0 rgba(0,0,0,0.25),inset 0 2px 0 rgba(255,255,255,0.35);border:2px solid rgba(255,255,255,0.5);position:relative;overflow:hidden;">
+      <div style="position:absolute;top:3px;left:3px;right:3px;height:9px;background:rgba(255,255,255,0.35);border-radius:3px 3px 0 0;"></div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:7px;background:rgba(0,0,0,0.25);border-radius:0 0 2px 2px;"></div>
+      <span style="position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,0.5);font-size:11px;">${label||''}</span>
+    </div>
+  </div>`;
+  return L.divIcon({html,className:'bus-icon',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-10]});
+}
+
 // ============ MAP LOADING ============
 function loadStopsInView(){
   kmbCluster.clearLayers();lwbMarkers.clearLayers();gmbMarkers.clearLayers();mtrMarkers.clearLayers();
@@ -469,7 +513,7 @@ function loadStopsInView(){
       const actualOp=(kmbData.kmb_stops||[]).includes(stop)?'kmb':'lwb';
       if(bbox&&!inDistrict(lat,lng,bbox))return;
       if(!bbox&&!bounds.contains([lat,lng]))return;
-      const m=L.circleMarker([lat,lng],{radius:7,fillColor:COLORS[actualOp],color:'#fff',weight:1.5,fillOpacity:0.85});
+      const m=L.marker([lat,lng],{icon:createBusIcon(actualOp,actualOp==='kmb'?'K':'L')});
       m.on('click',()=>openPopup(m,stop,actualOp));kmbCluster.addLayer(m);
     });}
   if(activeOps.has('gmb')&&gmbData?.stops){gmbData.stops.forEach(stop=>{
@@ -477,7 +521,7 @@ function loadStopsInView(){
     if(!lat||!lng)return;
     if(bbox&&!inDistrict(parseFloat(lat),parseFloat(lng),bbox))return;
     if(!bbox&&!bounds.contains([parseFloat(lat),parseFloat(lng)]))return;
-    const m=L.circleMarker([lat,lng],{radius:7,fillColor:COLORS.gmb,color:'#fff',weight:1.5,fillOpacity:0.85});
+    const m=L.marker([parseFloat(lat),parseFloat(lng)],{icon:createBusIcon('gmb','G')});
     m.on('click',()=>openPopup(m,stop,'gmb'));gmbMarkers.addLayer(m);
   });}
   if(activeOps.has('mtr')&&mtrData?.routes){const seen=new Set();mtrData.routes.forEach(route=>(route.stops||[]).forEach(stop=>{
@@ -485,7 +529,7 @@ function loadStopsInView(){
     const lat=parseFloat(stop.STATION_LATITUDE),lng=parseFloat(stop.STATION_LONGITUDE);
     if(bbox&&!inDistrict(lat,lng,bbox))return;
     if(!bbox&&!bounds.contains([lat,lng]))return;
-    const m=L.circleMarker([lat,lng],{radius:7,fillColor:COLORS.mtr,color:'#fff',weight:1.5,fillOpacity:0.85});
+    const m=L.marker([lat,lng],{icon:createBusIcon('mtr','M')});
     m.on('click',()=>openPopup(m,stop,'mtr'));mtrMarkers.addLayer(m);
   }));}
 }
@@ -532,7 +576,13 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
   return`<div class="popup-inner">
     <div class="popup-header">
       <div><div class="stop-name">${nameTc}</div><div class="stop-op" style="background:${chipColor};">${OP_NAMES[op]||op}</div></div>
-      <div class="stop-en">${nameEn}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:36px;height:36px;border-radius:8px 8px 4px 4px;background:${chipColor};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3),inset 0 -3px 0 rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.3);border:1.5px solid rgba(255,255,255,0.5);">
+          <div style="position:absolute;top:3px;left:3px;right:3px;height:8px;background:rgba(255,255,255,0.35);border-radius:3px 3px 0 0;"></div>
+          <span style="font-size:12px;font-weight:900;color:white;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${op.toUpperCase()}</span>
+        </div>
+        <div class="stop-en">${nameEn}</div>
+      </div>
     </div>${chipsHtml}${etaHtml}
   </div>`;
 }
@@ -732,7 +782,8 @@ function findNearest(lat,lng){
   if(mtrData?.routes&&activeOps.has('mtr')){const seen=new Set();mtrData.routes.forEach(r=>(r.stops||[]).forEach(s=>{if(seen.has(s.STATION_ID))return;seen.add(s.STATION_ID);all.push({...s,_op:'mtr',lat:parseFloat(s.STATION_LATITUDE),lng:parseFloat(s.STATION_LONGITUDE)});}));}
   all.forEach(s=>{s.dist=Math.sqrt(Math.pow(s.lat-lat,2)+Math.pow(s.lng-lng,2));});
   nearestMarkers=all.sort((a,b)=>a.dist-b.dist).slice(0,5).map(s=>{
-    const m=L.circleMarker([s.lat,s.lng],{radius:12,fillColor:'#fff',color:COLORS[s._op],weight:4,fillOpacity:0.9}).addTo(map);nearestMarkers.push(m);return m;
+    const m=L.circleMarker([s.lat,s.lng],{radius:12,fillColor:'#fff',color:COLORS[s._op],weight:4,fillOpacity:0.9}).addTo(map);
+    m.bindPopup(`📍 最近站點<br>${s.name_tc||s.name_en||s._op}<br><small>距離 ${(s.dist*111).toFixed(0)}m</small>`);nearestMarkers.push(m);return m;
   });}
 function clearNearest(){nearestMarkers.forEach(m=>map.removeLayer(m));nearestMarkers=[];}
 
