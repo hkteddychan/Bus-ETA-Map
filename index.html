@@ -422,7 +422,18 @@ async function init(){
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
   document.getElementById('fc-zoom-in').onclick=()=>map.zoomIn();
   document.getElementById('fc-zoom-out').onclick=()=>map.zoomOut();
-  kmbCluster=L.markerClusterGroup({maxClusterRadius:50,spiderfyOnMaxZoom:true,showCoverageOnHover:false,chunkedLoading:true});
+  kmbCluster=L.markerClusterGroup({
+    maxClusterRadius:50,spiderfyOnMaxZoom:true,showCoverageOnHover:false,chunkedLoading:true,
+    iconCreateFunction:function(cluster){
+      const count=cluster.getChildCount();
+      const size=count<10?32:count<100?40:count<1000?48:56;
+      const label=count>=1000?(count/1000).toFixed(1)+'k':String(count);
+      return L.divIcon({
+        html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:linear-gradient(135deg,#e74c3c,#c0392b);display:flex;align-items:center;justify-content:center;font-size:${size<40?11:13}px;font-weight:900;color:white;box-shadow:0 3px 10px rgba(0,0,0,0.4),inset 0 -4px 0 rgba(0,0,0,0.25),inset 0 2px 0 rgba(255,255,255,0.35);border:3px solid rgba(255,255,255,0.7);">${label}</div>`,
+        className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]
+      });
+    }
+  });
   map.addLayer(kmbCluster);
   map.addLayer(lwbMarkers);map.addLayer(ctbMarkers);map.addLayer(nlbMarkers);map.addLayer(gmbMarkers);map.addLayer(mtrMarkers);
   map.on('moveend',()=>{if(currentDistrict==='')loadStopsInView();});
