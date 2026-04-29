@@ -681,14 +681,16 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
     chipsHtml+='</div>';
   }
   const etaHtml=`<div class="eta-section" id="eta-${key}"><div class="eta-loading"><div class="spinner"></div>載入中...</div></div>`;
+// P0-B: 移除無意義的 36px 運營商方格，節省視覺空間
+// 右側改為：運營商 badge（小） + 最近更新時間
   return`<div class="popup-inner">
     <div class="popup-header">
-      <div><div class="stop-name">${nameTc}</div><div class="stop-op" style="background:${chipColor};">${OP_NAMES[op]||op}</div></div>
+      <div>
+        <div class="stop-name">${nameTc}</div>
+        <div class="stop-op" style="background:${chipColor};font-size:10px;padding:2px 8px;">${OP_NAMES[op]||op}</div>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:36px;height:36px;border-radius:8px 8px 4px 4px;background:${chipColor};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3),inset 0 -3px 0 rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.3);border:1.5px solid rgba(255,255,255,0.5);">
-          <div style="position:absolute;top:3px;left:3px;right:3px;height:8px;background:rgba(255,255,255,0.35);border-radius:3px 3px 0 0;"></div>
-          <span style="font-size:12px;font-weight:900;color:white;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${op.toUpperCase()}</span>
-        </div>
+        <div class="popup-last-update" id="lu-${key}" style="font-size:10px;color:#aaa;"></div>
         <div class="stop-en">${nameEn}</div>
       </div>
     </div>${chipsHtml}${etaHtml}
@@ -871,6 +873,9 @@ function renderEtas(key,op,stopId,data,ts,loading,error){
     html+=`</div></div>`;
   });
   el.innerHTML=html;
+  // P0-B: Update "last update" timestamp in popup header
+  const luEl=document.getElementById(`lu-${key}`);
+  if(luEl&&ts){luEl.textContent=`更新 ${new Date(ts).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})}`;}
   el.querySelectorAll('.route-chip[data-key]').forEach(chip=>{
     chip.onclick=()=>{
       const k=chip.dataset.key,o=chip.dataset.op,sId=chip.dataset.stop;
@@ -929,6 +934,7 @@ function showAutocomplete(results){
   });}
 
 // ============ GPS ============
+// P0-A: GPS 最近站顯示真實 ETA（Top-3路線），不再只顯示距離
 function findNearest(lat,lng){
   clearNearest();const all=[];
   if(kmbData?.kmb_stops&&activeOps.has('kmb'))kmbData.kmb_stops.forEach(s=>all.push({...s,_op:'kmb',lat:parseFloat(s.lat),lng:parseFloat(s.long)}));
@@ -938,12 +944,55 @@ function findNearest(lat,lng){
   if(gmbData?.stops&&activeOps.has('gmb'))gmbData.stops.forEach(s=>{const lat2=Array.isArray(s.lat)?s.lat[1]:s.lat,lng2=Array.isArray(s.lng)?s.lng[1]:s.lng;if(lat2&&lng2)all.push({...s,_op:'gmb',lat:parseFloat(lat2),lng:parseFloat(lng2)});});
   if(mtrData?.routes&&activeOps.has('mtr')){const seen=new Set();mtrData.routes.forEach(r=>(r.stops||[]).forEach(s=>{if(seen.has(s.STATION_ID))return;seen.add(s.STATION_ID);all.push({...s,_op:'mtr',lat:parseFloat(s.STATION_LATITUDE),lng:parseFloat(s.STATION_LONGITUDE)});}));}
   all.forEach(s=>{s.dist=Math.sqrt(Math.pow(s.lat-lat,2)+Math.pow(s.lng-lng,2));});
-  nearestMarkers=all.sort((a,b)=>a.dist-b.dist).slice(0,5).map(s=>{
-    const m=L.circleMarker([s.lat,s.lng],{radius:12,fillColor:'#fff',color:COLORS[s._op],weight:4,fillOpacity:0.9}).addTo(map);
-    m.bindPopup(`📍 最近站點<br>${s.name_tc||s.name_en||s._op}<br><small>距離 ${(s.dist*111).toFixed(0)}m</small>`);nearestMarkers.push(m);return m;
-  });}
+  const sorted=all.sort((a,b)=>a.dist-b.dist).slice(0,5);
+  // 最近站：用 bus icon + 完整 popup（自動 fetch ETA）
+  const nearest=sorted[0];
+  if(nearest){
+    const stopId=getStopId(nearest,nearest._op);
+    const nameTc=nearest.name_tc||nearest.STATION_NAME_CHI||nearest.name_en||`${nearest._op} 站`;
+    const nameEn=nearest.name_en||nearest.STATION_NAME_ENG||nearest.name_tc||`${nearest._op} Stop`;
+    const routes=(stopRoutesIndex[nearest._op]||{})[stopId]||[];
+    // 自動預載最近站的 Top-3 路線 ETA
+    const topRoutes=routes.slice(0,3);
+    const key=`nearest_${stopId}`;
+    const chipColor=COLORS[nearest._op]||'#888';
+    // 用 divIcon 顯示綠色 GPS 站點標記（區分普通站點）
+    const gpsIcon=L.divIcon({
+      html:`<div style="width:32px;height:32px;background:#00C853;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:white;">📍</div>`,
+      className:'gps-nearest-icon',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-20]
+    });
+    const m=L.marker([nearest.lat,nearest.lng],{icon:gpsIcon}).addTo(map);
+    // 建立完整 popup（與普通站點相同格式）
+    const content=buildPopupContent(key,nameTc,nameEn,stopId,nearest._op,routes,topRoutes.map(r=>r.key||r.route),false);
+    m.bindPopup(content,{maxWidth:360,closeButton:true});
+    nearestMarkers.push(m);
+    // 立即 fetch ETA（45秒 cache）
+    if(topRoutes.length>0){
+      fetchEtas(stopId,nearest._op,routes,key);
+    }
+    // 延遲 500ms 自動開啟 popup
+    setTimeout(()=>m.openPopup(),500);
+  }
+  // 其餘 4 個最近站：圓形標記，click 後開啟完整 popup
+  sorted.slice(1).forEach(s=>{
+    const stopId=getStopId(s,s._op);
+    const nameTc=s.name_tc||s.STATION_NAME_CHI||s.name_en||`${s._op} 站`;
+    const nameEn=s.name_en||s.STATION_NAME_ENG||s.name_tc||`${s._op} Stop`;
+    const routes=(stopRoutesIndex[s._op]||{})[stopId]||[];
+    const key=`nearest2_${stopId}`;
+    const chipColor=COLORS[s._op]||'#888';
+    const m=L.circleMarker([s.lat,s.lng],{radius:10,fillColor:'#fff',color:COLORS[s._op],weight:3,fillOpacity:0.9}).addTo(map);
+    // click 後用 buildPopupContent + fetchEtas 顯示完整資訊
+    m.on('click',()=>{
+      const topRoutes=routes.slice(0,5);
+      const content=buildPopupContent(key,nameTc,nameEn,stopId,s._op,routes,topRoutes.map(r=>r.key||r.route),false);
+      m.bindPopup(content,{maxWidth:360,closeButton:true}).openPopup();
+      if(topRoutes.length>0)fetchEtas(stopId,s._op,routes,key);
+    });
+    nearestMarkers.push(m);
+  });
+}
 function clearNearest(){nearestMarkers.forEach(m=>map.removeLayer(m));nearestMarkers=[];}
-
 // ============ EVENTS ============
 function setupEvents(){
   document.querySelectorAll('.op-toggle').forEach(toggle=>{
