@@ -256,6 +256,15 @@
   }
   .route-chip-more:hover { background: #e0e0e0; color: #333; }
 
+  /* P2-A: Set start button */
+  .set-start-btn {
+    background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px;
+    padding: 2px 8px; font-size: 11px; cursor: pointer; color: #555;
+    transition: background 0.15s; flex-shrink: 0;
+  }
+  .set-start-btn:hover { background: #e0e0e0; }
+  .set-start-btn.active { background: #1976D2; color: white; border-color: #1976D2; }
+
   /* Bus icon markers */
   .bus-icon {
     width: 32px !important; height: 32px !important;
@@ -312,10 +321,15 @@
     padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 700;
     color: white; display: inline-flex; align-items: center; gap: 3px;
   }
-  .eta-chip.soon { background: #1B5E20; }   /* ≤10 min */
+  .eta-chip.imminent { background: #00C853; animation: eta-pulse 1s ease-in-out infinite; box-shadow: 0 0 8px rgba(0,200,83,0.6); }
+  .eta-chip.soon { background: #1B5E20; }   /* 4-10 min */
   .eta-chip.medium { background: #E65100; } /* 10-20 min */
   .eta-chip.late { background: #B71C1C; }  /* >20 min */
   .eta-chip.none { background: #ccc; }
+  @keyframes eta-pulse {
+    0%,100% { box-shadow: 0 0 4px rgba(0,200,83,0.4); }
+    50% { box-shadow: 0 0 12px rgba(0,200,83,0.9); }
+  }
   .eta-chip .mins-num { font-size: 11px; opacity: 0.9; }
   .eta-chip .eta-time { font-size: 10px; opacity: 0.75; margin-left: 2px; }
 
@@ -520,6 +534,8 @@ async function init(){
     buildStopRoutesIndex();buildSearchIndex();updateCounts();loadStopsInView();
   }catch(err){console.error(err);alert('數據載入失敗，請刷新頁面');}
   setupEvents();document.getElementById('loading').style.display='none';
+  // P2-A: 如果有保存的起點站，等數據載入完成後自動飛到並開啟 popup
+  if(startStop.stopId){setTimeout(flyToStartStop,800);}
 }
 
 // ============ INDEXES ============
@@ -740,7 +756,7 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
       const rk=r.key||r.route;
       const isSel=selRoutes.includes(rk);
       const dir=r.route_seq||r.dir||'';
-      chipsHtml+=`<span class="route-chip${isSel?' selected':''}" style="background:${chipColor};" data-key="${rk}" data-op="${op}" data-stop="${stopId}" data-dir="${dir}">${r.route}<span class="eta-preview" data-route="${rk}">--</span></span>`;
+      chipsHtml+=`<span class="route-chip${isSel?' selected':''}" style="background:${chipColor};" data-key="${rk}" data-op="${op}" data-stop="${stopId}" data-dir="${dir}">${op==='gmb'?'🟢 ':''}${r.route}<span class="eta-preview" data-route="${rk}">--</span></span>`;
     });
     if(routes.length>DISPLAY_LIMIT&&!isExpanded){
       chipsHtml+=`<span class="route-chip-more" data-key="${key}" data-total="${routes.length}">+${routes.length-DISPLAY_LIMIT} 更多</span>`;
@@ -759,6 +775,7 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="popup-last-update" id="lu-${key}" style="font-size:10px;color:#aaa;"></div>
         <div class="stop-en">${nameEn}</div>
+        <button class="set-start-btn" onclick="setAsStart('${key}','${stopId}','${op}','${nameTc||nameEn}')" title="設為起點">🚩 起點</button>
       </div>
     </div>${chipsHtml}${etaHtml}
   </div>`;
@@ -901,7 +918,7 @@ function scheduleRefresh(cacheKey,stopId,op,routes,key,delay){
   etaTimers[cacheKey]=setTimeout(()=>fetchEtas(stopId,op,routes,key),delay);
 }
 
-function etaChipClass(mins){if(mins===null||mins===undefined)return'none';if(mins<=10)return'soon';if(mins<=20)return'medium';return'late';}
+function etaChipClass(mins){if(mins===null||mins===undefined)return'none';if(mins<=3)return'imminent';if(mins<=10)return'soon';if(mins<=20)return'medium';return'late';}
 function formatEta(mins){if(mins===null||mins===undefined)return'—';if(mins<1)return'<span class="mins-num">即</span>';return`<span class="mins-num">${mins}分</span>`;}
 
 function renderEtas(key,op,stopId,data,ts,loading,error){
@@ -1077,6 +1094,61 @@ window.openNearestCard=function(key,idx){
 function registerNearestMarker(key,marker){
   if(nearestCardsCache[key]){nearestCardsCache[key].markerRef=marker;}
 }
+let startStop={key:null,stopId:null,op:null,name:null};
+// P2-A: 設為起點 — 保存到 localStorage，下次打開地圖自動飛到
+function setAsStart(key,stopId,op,name){
+  const isSameStart=startStop.stopId===stopId&&startStop.op===op;
+  if(isSameStart){
+    // Toggle off
+    startStop={key:null,stopId:null,op:null,name:null};
+    localStorage.removeItem('hkbus_start');
+    document.querySelectorAll('.set-start-btn').forEach(b=>b.classList.remove('active'));
+    return;
+  }
+  startStop={key,stopId,op,name};
+  localStorage.setItem('hkbus_start',JSON.stringify(startStop));
+  // Highlight active button
+  document.querySelectorAll('.set-start-btn').forEach(b=>{
+    const [,,,n]=b.getAttribute('onclick')?.match(/setAsStart\('([^']*)','([^']*)','([^']*)','([^']*)'\)/)||[];
+    b.classList.toggle('active',n===name||stopId===b.dataset.stop);
+  });
+}
+function loadStartStop(){
+  try{
+    const saved=localStorage.getItem('hkbus_start');
+    if(saved){startStop=JSON.parse(saved);}
+  }catch(e){}
+}
+function flyToStartStop(){
+  if(!startStop.stopId)return;
+  // Find the stop in data and fly to it
+  const{stopId,op,name}=startStop;
+  // Search in all stop data
+  let latLng=null;
+  if((op==='kmb'||op==='lwb')&&kmbData){
+    const stops=op==='kmb'?kmbData.kmb_stops:kmbData.lwb_stops;
+    const s=stops?.find(x=>x.stop===stopId);
+    if(s){latLng=[parseFloat(s.lat),parseFloat(s.long)];}
+  } else if(op==='ctb'&&ctbData){
+    const s=ctbData.stops?.find(x=>x.stop===stopId);
+    if(s){latLng=[parseFloat(s.lat),parseFloat(s.lng)];}
+  } else if(op==='gmb'&&gmbData){
+    const s=gmbData.stops?.find(x=>x.stop_id===stopId);
+    if(s){latLng=[parseFloat(Array.isArray(s.lat)?s.lat[1]:s.lat),parseFloat(Array.isArray(s.lng)?s.lng[1]:s.lng)];}
+  }
+  if(latLng){
+    map.setView(latLng,16);
+    // Try to open popup
+    nearestMarkers.forEach(m=>{
+      const d=m.getLatLng();
+      if(Math.abs(d.lat-latLng[0])<0.0001&&Math.abs(d.lng-latLng[1])<0.0001){
+        setTimeout(()=>m.openPopup(),300);
+      }
+    });
+  }
+}
+// Load saved start stop on init
+loadStartStop();
 
 
 function findNearest(lat,lng){
