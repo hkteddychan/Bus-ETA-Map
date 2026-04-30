@@ -11,7 +11,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; }
   #map { width: 100vw; height: 100vh; }
-
+  /* Controls */
   .controls {
     position: absolute;
     top: 10px; left: 10px;
@@ -20,7 +20,26 @@
     flex-direction: column;
     gap: 8px;
     max-width: 340px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
+  .controls.collapsed {
+    transform: translateX(calc(-100% - 20px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  .panel-toggle-btn {
+    position: absolute;
+    top: 10px; left: 10px;
+    z-index: 1001;
+    width: 36px; height: 36px;
+    background: white; border: none; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .panel-toggle-btn:hover { background: #f0f0f0; }
+  .panel-toggle-btn.shifted { left: 260px; }
 
   /* Operator toggles */
   .op-toggles {
@@ -43,18 +62,18 @@
   .op-toggle.active { color: white; border-color: transparent; }
   .op-toggle .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: 0.7; }
   .op-toggle.active .dot { opacity: 1; }
-  .op-toggle[data-op=kmb] { border-color: #e74c3c40; }
-  .op-toggle[data-op=kmb].active { background: #e74c3c; border-color: #e74c3c; }
-  .op-toggle[data-op=lwb] { border-color: #e67e2240; }
-  .op-toggle[data-op=lwb].active { background: #e67e22; border-color: #e67e22; }
-  .op-toggle[data-op=ctb] { border-color: #8e44ad40; }
-  .op-toggle[data-op=ctb].active { background: #8e44ad; border-color: #8e44ad; }
-  .op-toggle[data-op=nlb] { border-color: #00897b40; }
-  .op-toggle[data-op=nlb].active { background: #00897b; border-color: #00897b; }
-  .op-toggle[data-op=gmb] { border-color: #27ae6040; }
-  .op-toggle[data-op=gmb].active { background: #27ae60; border-color: #27ae60; }
-  .op-toggle[data-op=mtr] { border-color: #3498db40; }
-  .op-toggle[data-op=mtr].active { background: #3498db; border-color: #3498db; }
+  .op-toggle[data-op=kmb] { border-color: #c0392b; color: #c0392b; background: #fdf2f2; }
+  .op-toggle[data-op=kmb].active { background: #c0392b; border-color: #c0392b; color: white; }
+  .op-toggle[data-op=lwb] { border-color: #d35400; color: #d35400; background: #fef9f2; }
+  .op-toggle[data-op=lwb].active { background: #d35400; border-color: #d35400; color: white; }
+  .op-toggle[data-op=ctb] { border-color: #7d3c98; color: #7d3c98; background: #f8f4fd; }
+  .op-toggle[data-op=ctb].active { background: #7d3c98; border-color: #7d3c98; color: white; }
+  .op-toggle[data-op=nlb] { border-color: #00897b; color: #00897b; background: #f2fafa; }
+  .op-toggle[data-op=nlb].active { background: #00897b; border-color: #00897b; color: white; }
+  .op-toggle[data-op=gmb] { border-color: #27ae60; color: #27ae60; background: #f2faf6; }
+  .op-toggle[data-op=gmb].active { background: #27ae60; border-color: #27ae60; color: white; }
+  .op-toggle[data-op=mtr] { border-color: #2980b9; color: #2980b9; background: #f2f7fb; }
+  .op-toggle[data-op=mtr].active { background: #2980b9; border-color: #2980b9; color: white; }
   .op-toggle .count { font-size: 11px; opacity: 0.85; font-weight: 400; }
 
   /* Search box */
@@ -65,10 +84,10 @@
   }
   .search-box input {
     width: 100%; padding: 9px 12px;
-    border: 1.5px solid #e0e0e0; border-radius: 8px;
+    border: 2px solid #b0b0b0; border-radius: 8px;
     font-size: 14px; outline: none; transition: border-color 0.2s;
   }
-  .search-box input:focus { border-color: #3498db; }
+  .search-box input:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.15); }
 
   .autocomplete {
     position: absolute; background: white;
@@ -148,16 +167,24 @@
   .fc-btn.active { background: #3498db; color: white; }
 
   /* Legend */
-  /* P1-A: Nearest ETA bar */
+  /* P1-C: Nearest ETA bar - improved mobile single-hand use */
   .nearest-eta-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
     z-index: 1100;
-    background: linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
-    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(16px);
     border-top: 2px solid #e0e0e0;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-    padding: 10px 12px 16px; /* extra bottom for mobile safe area */
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+    padding: 10px 12px;
     padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  /* Drag handle for mobile */
+  .nearest-eta-bar::before {
+    content: '';
+    display: block;
+    width: 40px; height: 4px;
+    background: #ccc; border-radius: 2px;
+    margin: 0 auto 8px;
   }
   .nearest-eta-bar.hidden { display: none; }
   .nearest-eta-header {
@@ -196,7 +223,7 @@
   .nearest-card-loading { font-size: 11px; color: #aaa; }
   .nearest-card-noeta { font-size: 11px; color: #999; }
   .legend {
-    position: absolute; bottom: 160px; right: 10px;
+    position: absolute; top: 70px; right: 10px;
     z-index: 1000; background: white;
     border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     padding: 10px 14px; font-size: 12px; min-width: 160px;
@@ -226,9 +253,9 @@
     margin-bottom: 10px; max-height: 140px; overflow-y: auto;
   }
   .route-chip {
-    padding: 3px 10px; border-radius: 14px; font-size: 12px; font-weight: 700;
+    padding: 4px 10px; border-radius: 14px; font-size: 14px; font-weight: 700;
     color: white; cursor: pointer; transition: transform 0.1s, opacity 0.1s;
-    border: 2px solid transparent; position: relative;
+    border: 2px solid transparent; position: relative; min-height: 28px;
   }
   .route-chip:hover { transform: scale(1.05); opacity: 0.9; }
   .route-chip.selected { border-color: #222; transform: scale(1.05); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
@@ -374,14 +401,15 @@
 </div>
 
 <!-- Controls -->
-<div class="controls">
+<button class="panel-toggle-btn" id="panel-toggle-btn" title="顯示/隱藏面板">☰</button>
+<div class="controls" id="side-panel">
   <div class="op-toggles">
-    <div class="op-toggle active" data-op="kmb"><span class="dot"></span>九巴<span class="count" id="cnt-kmb"></span></div>
-    <div class="op-toggle active" data-op="lwb"><span class="dot"></span>龍運<span class="count" id="cnt-lwb"></span></div>
-    <div class="op-toggle active" data-op="ctb"><span class="dot"></span>城巴<span class="count" id="cnt-ctb"></span></div>
-    <div class="op-toggle active" data-op="nlb"><span class="dot"></span>新巴<span class="count" id="cnt-nlb"></span></div>
-    <div class="op-toggle active" data-op="gmb"><span class="dot"></span>專線小巴<span class="count" id="cnt-gmb"></span></div>
-    <div class="op-toggle active" data-op="mtr"><span class="dot"></span>港鐵<span class="count" id="cnt-mtr"></span></div>
+    <div class="op-toggle active" data-op="kmb"><span class="dot"></span>🚌 九巴<span class="count" id="cnt-kmb"></span></div>
+    <div class="op-toggle active" data-op="lwb"><span class="dot"></span>🚌 龍運<span class="count" id="cnt-lwb"></span></div>
+    <div class="op-toggle active" data-op="ctb"><span class="dot"></span>🚍 城巴<span class="count" id="cnt-ctb"></span></div>
+    <div class="op-toggle active" data-op="nlb"><span class="dot"></span>🚍 新巴<span class="count" id="cnt-nlb"></span></div>
+    <div class="op-toggle active" data-op="gmb"><span class="dot"></span>🟢 專線小巴<span class="count" id="cnt-gmb"></span></div>
+    <div class="op-toggle active" data-op="mtr"><span class="dot"></span>🚇 港鐵<span class="count" id="cnt-mtr"></span></div>
   </div>
   <div class="search-box">
     <input type="text" id="search" placeholder="🔍 搜尋巴士站或路線... (如: 970, 中環)" autocomplete="off">
@@ -512,6 +540,14 @@ async function init(){
   document.getElementById('fc-zoom-in').onclick=()=>map.zoomIn();
   document.getElementById('fc-zoom-out').onclick=()=>map.zoomOut();
   document.getElementById('fc-route-line').onclick=toggleRouteLines;
+  // P0-C: Panel toggle button
+  const panelToggleBtn=document.getElementById('panel-toggle-btn');
+  const sidePanel=document.getElementById('side-panel');
+  panelToggleBtn.addEventListener('click',()=>{
+    sidePanel.classList.toggle('collapsed');
+    panelToggleBtn.classList.toggle('shifted');
+    panelToggleBtn.textContent=sidePanel.classList.contains('collapsed')?'☰':'✕';
+  });
   kmbCluster=L.markerClusterGroup({
     maxClusterRadius:50,spiderfyOnMaxZoom:true,showCoverageOnHover:false,chunkedLoading:true,
     iconCreateFunction:function(cluster){
