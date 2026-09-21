@@ -2,7 +2,15 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3498db">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="巴士到站">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <title>香港巴士到站地圖</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -285,6 +293,92 @@
   .loading-spinner { width: 44px; height: 44px; border: 4px solid #e8e8e8; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
   .loading-text { font-size: 15px; color: #444; font-weight: 500; }
   .loading-sub { font-size: 12px; color: #999; }
+
+  /* ============ FAVORITES ============ */
+  .fav-btn {
+    background: #fff; border: none; border-radius: 50%;
+    width: 34px; height: 34px; font-size: 17px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); line-height: 1; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s; color: #bbb;
+  }
+  .fav-btn:hover { transform: scale(1.15); }
+  .fav-btn.is-fav { color: #f5a623; background: #fff8e1; }
+  #fav-panel {
+    position: absolute; top: 10px; right: 10px; z-index: 1200;
+    background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    width: 280px; max-height: 70vh; overflow-y: auto; display: none; padding: 10px;
+  }
+  #fav-panel.show { display: block; }
+  #fav-panel h4 { font-size: 13px; margin-bottom: 8px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+  #fav-panel h4 .close-fav { cursor: pointer; color: #888; border: none; background: none; font-size: 15px; }
+  .fav-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 6px;
+    border-radius: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+  }
+  .fav-item:hover { background: #f5f8ff; }
+  .fav-item .fav-name { flex: 1; min-width: 0; }
+  .fav-item .fav-name .t { font-size: 13px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fav-item .fav-name .e { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fav-item .fav-op { font-size: 10px; padding: 2px 7px; border-radius: 10px; color: white; font-weight: 700; flex-shrink: 0; }
+  .fav-item .fav-del { border: none; background: none; color: #ccc; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+  .fav-item .fav-del:hover { color: #e74c3c; }
+  .fav-empty { font-size: 12px; color: #aaa; padding: 12px; text-align: center; }
+
+  /* ============ STALENESS ============ */
+  .eta-updated.stale-warn { color: #E65100 !important; font-weight: 700; }
+  .eta-updated.stale-old { color: #B71C1C !important; font-weight: 700; }
+  #data-age-badge {
+    position: absolute; bottom: 30px; left: 10px; z-index: 999;
+    background: #fff; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    padding: 5px 12px; font-size: 11px; font-weight: 600; color: #2e7d32; display: flex; align-items: center; gap: 6px;
+  }
+  #data-age-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; }
+  #data-age-badge.warn { color: #E65100; } #data-age-badge.warn .dot { background: #E65100; }
+  #data-age-badge.old { color: #B71C1C; } #data-age-badge.old .dot { background: #B71C1C; }
+
+  /* ============ DARK MODE ============ */
+  body.dark { background: #0f1420; color: #e5e5e5; }
+  body.dark .op-toggles, body.dark .search-box, body.dark .district-bar,
+  body.dark .gps-btn, body.dark .legend, body.dark .fc-btn,
+  body.dark #fav-panel, body.dark #data-age-badge {
+    background: #1a2130; border-color: #2a3345; color: #ddd; box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  }
+  body.dark .op-toggle { background: #232c3e; color: #9aa; border-color: #2a3345; }
+  body.dark .search-box input { background: #121826; border-color: #2a3345; color: #e5e5e5; }
+  body.dark .search-box input::placeholder { color: #889; }
+  body.dark .autocomplete { background: #1a2130; border-color: #2a3345; }
+  body.dark .autocomplete-item { border-color: #242e40; }
+  body.dark .autocomplete-item:hover { background: #232c3e; }
+  body.dark .autocomplete-item .name-tc { color: #eee; }
+  body.dark .autocomplete-item .name-en { color: #99a; }
+  body.dark .autocomplete-section-label { background: #141b29; color: #889; border-color: #242e40; }
+  body.dark .autocomplete-item .district-tag { background: #2a3345; color: #99a; }
+  body.dark .district-pill { background: #121826; border-color: #2a3345; color: #bbb; }
+  body.dark .district-pill.active { background: #3498db; color: #fff; }
+  body.dark .gps-btn, body.dark .fc-btn { color: #ddd; }
+  body.dark .fc-btn:hover { background: #2a3345; }
+  body.dark .legend-title, body.dark .legend-item, body.dark .legend-eta-item { color: #ccc; }
+  body.dark .legend-eta { border-top-color: #2a3345; }
+  body.dark .leaflet-popup-content-wrapper { background: #1a2130; }
+  body.dark .popup-inner { color: #e5e5e5; }
+  body.dark .popup-header .stop-name { color: #eee; }
+  body.dark .popup-stop-en { color: #99a; }
+  body.dark .eta-section { border-top-color: #2a3345; }
+  body.dark .eta-route-name, body.dark .eta-route-dest { color: #ddd; }
+  body.dark .route-chip-more { background: #232c3e; color: #9aa; border-color: #33405a; }
+  body.dark .eta-updated, body.dark .eta-no-data, body.dark .eta-loading { color: #889; }
+  body.dark .eta-section-title { color: #99a; }
+  body.dark .loading-overlay { background: rgba(15,20,32,0.95); }
+  body.dark .loading-text { color: #ddd; }
+  body.dark .loading-sub { color: #889; }
+  body.dark #fav-panel h4 { color: #ddd; }
+  body.dark .fav-item { border-color: #242e40; }
+  body.dark .fav-item:hover { background: #232c3e; }
+  body.dark .fav-item .fav-name .t { color: #eee; }
+  body.dark .fav-item .fav-name .e { color: #99a; }
+  body.dark .fav-btn { background: #232c3e; color: #889; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+  body.dark .fav-btn.is-fav { color: #f5a623; background: #3a2f12; }
+  .theme-toggle { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -334,7 +428,18 @@
 <div class="floating-controls">
   <button class="fc-btn" id="fc-zoom-in" title="放大">+</button>
   <button class="fc-btn" id="fc-zoom-out" title="縮小">−</button>
+  <button class="fc-btn" id="fc-fav" title="常用站書籤">⭐</button>
+  <button class="fc-btn theme-toggle" id="fc-theme" title="切換深色模式">🌙</button>
 </div>
+
+<!-- 常用站書籤面板 -->
+<div id="fav-panel">
+  <h4>⭐ 常用站書籤 <button class="close-fav" id="fav-close">✕</button></h4>
+  <div id="fav-list"></div>
+</div>
+
+<!-- 資料舊化標示 -->
+<div id="data-age-badge"><span class="dot"></span><span id="data-age-text">ETA 更新中…</span></div>
 
 <div id="map"></div>
 
@@ -406,11 +511,92 @@ let allStopNames=[],routeSearchIndex=[];
 let userMarker=null;
 let expandedChips=new Set();
 
+// ============ FAVORITES / THEME / STALENESS ============
+const FAV_KEY='bus_eta_favs_v1';
+const THEME_KEY='bus_eta_theme_v1';
+let favs=loadFavs();
+let lastEtaTs=null;
+let tileLayerObj=null;
+let tileDark=false;
+let globalStaleTimer=null;
+
+function loadFavs(){try{const r=localStorage.getItem(FAV_KEY);return r?JSON.parse(r):[];}catch(e){return[];}}
+function saveFavs(){try{localStorage.setItem(FAV_KEY,JSON.stringify(favs));}catch(e){}}
+function isFav(key){return favs.some(f=>f.key===key);}
+function toggleFav(key,op,stopId,nameTc,nameEn){
+  const idx=favs.findIndex(f=>f.key===key);
+  if(idx>=0){favs.splice(idx,1);}
+  else{favs.push({key,op,stopId,nameTc,nameEn,ts:Date.now()});}
+  saveFavs();renderFavPanel();
+  return isFav(key);
+}
+function openFavFromKey(key){
+  const f=favs.find(x=>x.key===key);if(!f)return;
+  const sId=f.stopId,o=f.op;
+  let stop,lat,lng;
+  if(o==='kmb'||o==='lwb'){
+    const src=(o==='kmb'?kmbData.kmb_stops:kmbData.lwb_stops)||[];
+    stop=src.find(s=>s.stop===sId);if(stop){lat=parseFloat(stop.lat);lng=parseFloat(stop.long);}
+  }else if(o==='gmb'){
+    stop=(gmbData?.stops||[]).find(s=>s.stop_id===sId);
+    if(stop){lat=Array.isArray(stop.lat)?stop.lat[1]:parseFloat(stop.lat);lng=Array.isArray(stop.lng)?stop.lng[1]:parseFloat(stop.lng);}
+  }else if(o==='mtr'){
+    for(const r of (mtrData?.routes||[])){stop=(r.stops||[]).find(s=>s.STATION_ID===sId);if(stop)break;}
+    if(stop){lat=parseFloat(stop.STATION_LATITUDE);lng=parseFloat(stop.STATION_LONGITUDE);}
+  }
+  if(lat==null||lng==null)return;
+  map.setView([lat,lng],16);
+  const m=L.marker([lat,lng],{icon:createBusIcon(o,o==='kmb'?'K':o==='lwb'?'L':o==='gmb'?'G':'M')});
+  m.on('click',()=>openPopup(m,stop,o));
+  m.addTo(map);m.openPopup();
+}
+function renderFavPanel(){
+  const list=document.getElementById('fav-list');
+  if(!favs.length){list.innerHTML=`<div class="fav-empty">尚無書籤<br><span style="font-size:11px;color:#bbb;">在地圖點擊車站後，按 ☆ 加入常用</span></div>`;return;}
+  list.innerHTML=favs.map(f=>`<div class="fav-item" data-favkey="${f.key}">
+    <div class="fav-name"><div class="t">${f.nameTc}</div><div class="e">${f.nameEn||''}</div></div>
+    <span class="fav-op" style="background:${COLORS[f.op]};">${OP_NAMES[f.op]}</span>
+    <button class="fav-del" data-del="${f.key}" title="移除書籤">🗑</button>
+  </div>`).join('');
+  list.querySelectorAll('.fav-item').forEach(item=>{
+    item.addEventListener('click',e=>{
+      if(e.target.closest('.fav-del'))return;
+      const k=item.dataset.favkey;
+      document.getElementById('fav-panel').classList.remove('show');
+      openFavFromKey(k);
+    });
+  });
+  list.querySelectorAll('.fav-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();const k=btn.dataset.del;favs=favs.filter(f=>f.key!==k);saveFavs();renderFavPanel();});
+  });
+}
+function updateDataAgeBadge(){
+  const el=document.getElementById('data-age-badge'),txt=document.getElementById('data-age-text');
+  if(lastEtaTs==null){el.className='';el.classList.remove('warn','old');txt.textContent='ETA 更新中…';return;}
+  const sec=Math.round((Date.now()-lastEtaTs)/1000);
+  el.classList.remove('warn','old');
+  if(sec<=90){txt.textContent=`ETA ${sec}秒前更新`;}
+  else if(sec<=300){el.classList.add('warn');txt.textContent=`ETA ${Math.round(sec/60)}分鐘前更新`;}
+  else{el.classList.add('old');txt.textContent=`ETA ${Math.round(sec/60)}分鐘前 (過時)`;}
+}
+function applyTheme(dark){
+  document.body.classList.toggle('dark',dark);
+  document.getElementById('fc-theme').textContent=dark?'☀️':'🌙';
+  try{localStorage.setItem(THEME_KEY,dark?'1':'0');}catch(e){}
+  const tileUrl=dark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png':'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  if(tileLayerObj){tileLayerObj.setUrl(tileUrl);}
+  else{tileLayerObj=L.tileLayer(tileUrl,{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);}
+  tileDark=dark;
+}
+
 // ============ INIT ============
 async function init(){
   document.getElementById('loading-sub').textContent='正在載入地圖...';
   map=L.map('map').setView(HK_CENTER,DEFAULT_ZOOM);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
+  tileLayerObj=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
+  // 套用已儲存之主題(深色模式)
+  let savedTheme='0';try{savedTheme=localStorage.getItem(THEME_KEY)||'0';}catch(e){}
+  if(savedTheme==='1'){document.body.classList.add('dark');document.getElementById('fc-theme').textContent='☀️';tileLayerObj.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');}
   document.getElementById('fc-zoom-in').onclick=()=>map.zoomIn();
   document.getElementById('fc-zoom-out').onclick=()=>map.zoomOut();
   kmbCluster=L.markerClusterGroup({maxClusterRadius:50,spiderfyOnMaxZoom:true,showCoverageOnHover:false,chunkedLoading:true});
@@ -582,6 +768,7 @@ function buildPopupContent(key,nameTc,nameEn,stopId,op,routes,selRoutes,isExpand
           <span style="font-size:12px;font-weight:900;color:white;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${op.toUpperCase()}</span>
         </div>
         <div class="stop-en">${nameEn}</div>
+        <button class="fav-btn${isFav(key)?' is-fav':''}" data-favkey="${key}" data-op="${op}" data-stopid="${stopId}" title="加入常用站">${isFav(key)?'★':'☆'}</button>
       </div>
     </div>${chipsHtml}${etaHtml}
   </div>`;
@@ -616,8 +803,16 @@ async function fetchEtas(stopId,op,routes,key){
     renderEtas(key,op,stopId,results,now);
     scheduleRefresh(cacheKey,stopId,op,routes,key,30000);
   }catch(e){
-    etaCache[cacheKey]={data:[],ts:now,error:true};
-    renderEtas(key,op,stopId,[],now,false,true);
+    const prev=etaCache[cacheKey];
+    if(prev&&prev.data&&prev.data.length&&!prev.error){
+      // 保留上次成功資料, 標示過時
+      etaCache[cacheKey]={data:prev.data,ts:prev.ts,error:true};
+      renderEtas(key,op,stopId,prev.data,prev.ts,false,true,true);
+    }else{
+      etaCache[cacheKey]={data:[],ts:now,error:true};
+      renderEtas(key,op,stopId,[],now,false,true);
+    }
+    scheduleRefresh(cacheKey,stopId,op,routes,key,15000);
   }
 }
 
@@ -680,16 +875,31 @@ function scheduleRefresh(cacheKey,stopId,op,routes,key,delay){
 function etaChipClass(mins){if(mins===null||mins===undefined)return'none';if(mins<=10)return'soon';if(mins<=20)return'medium';return'late';}
 function formatEta(mins){if(mins===null||mins===undefined)return'—';if(mins<1)return'<span class="mins-num">即</span>';return`<span class="mins-num">${mins}分</span>`;}
 
-function renderEtas(key,op,stopId,data,ts,loading,error){
+function renderEtas(key,op,stopId,data,ts,loading,error,stale){
   const el=document.getElementById(`eta-${key}`);
   if(!el)return;
   if(loading){el.innerHTML=`<div class="eta-loading"><div class="spinner"></div>載入中...</div>`;return;}
-  if(error||(!data&&!ts)){el.innerHTML=`<div class="eta-error">⚠️ 無法取得到站資料<button class="eta-retry-btn" onclick="retryEta('${key}','${op}','${stopId}')">重試</button></div>`;return;}
+  if(error&&data&&data.length){
+    // 顯示上次成功資料 + 過時提示
+    const offline=navigator.onLine?'':' 📴離線';
+    el.innerHTML=`<div class="eta-error">⚠️ 顯示上次資料(可能過時)${offline}<button class="eta-retry-btn" onclick="retryEta('${key}','${op}','${stopId}')">重試</button></div>`;
+    renderStaleData(key,op,stopId,data,ts);
+    return;
+  }
+  if(error||(!data&&!ts)){
+    const offline=navigator.onLine?'':' 📴離線';
+    el.innerHTML=`<div class="eta-error">⚠️ 無法取得到站資料${offline}<button class="eta-retry-btn" onclick="retryEta('${key}','${op}','${stopId}')">重試</button></div>`;
+    return;
+  }
   if(!data||data.length===0){
     el.innerHTML=`<div class="eta-section-title">即時到站</div><div class="eta-no-data">暫無到站資料</div>`;return;
   }
-  const updatedStr=ts?`更新 ${new Date(ts).toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit'})}`:'';
-  let html=`<div class="eta-section-title">即時到站<span class="eta-updated">${updatedStr}</span></div>`;
+  if(ts){lastEtaTs=ts;updateDataAgeBadge();}
+  const ageSec=ts?Math.round((Date.now()-ts)/1000):0;
+  const ageStr=ts?(ageSec<60?`${ageSec}秒前更新`:`${Math.round(ageSec/60)}分鐘前更新`):'';
+  const ageCls=(!ts)?'':(ageSec>300?' stale-old':(ageSec>90?' stale-warn':''));
+  const updatedStr=ts?ageStr:'';
+  let html=`<div class="eta-section-title">即時到站<span class="eta-updated${ageCls}">${updatedStr}</span></div>`;
   data.forEach(group=>{
     const dir=group.routeSeq?'1':'2';
     const dirLabel=group.routeSeq===1?'①':group.routeSeq===2?'②':'';
@@ -738,6 +948,24 @@ function renderEtas(key,op,stopId,data,ts,loading,error){
   });
 }
 window.retryEta=function(key,op,stopId){const routes=(stopRoutesIndex[op]||{})[stopId]||[];delete etaCache[`${op}_${stopId}`];fetchEtas(stopId,op,routes,key);};
+
+// 顯示上次成功之 ETA(過時資料)
+function renderStaleData(key,op,stopId,data,ts){
+  const el=document.getElementById(`eta-${key}`);if(!el)return;
+  const ageSec=ts?Math.round((Date.now()-ts)/60000):0;
+  let html=`<div class="eta-section-title">上次資料 <span class="eta-updated stale-old">${ageSec}分鐘前</span></div>`;
+  data.forEach(group=>{
+    const dirLabel=group.routeSeq===1?'①':group.routeSeq===2?'②':'';
+    const dirClass=group.routeSeq?'dir-'+group.routeSeq:'';
+    html+=`<div class="eta-route-group"><div class="eta-route-header">`;
+    html+=`<span class="eta-route-name">${group.route}${dirLabel?`<span class="eta-dir-badge ${dirClass}">${dirLabel}</span>`:''}</span>`;
+    html+=`<span class="eta-route-dest">${group.dest_tc||''}</span></div><div class="eta-times">`;
+    if(!group.etas||group.etas.length===0){html+=`<span class="eta-chip none">無班次</span>`;}
+    else{group.etas.forEach(e=>{const mins=e.mins??e.diff??null;const cls=etaChipClass(mins);const txt=formatEta(mins);html+=`<span class="eta-chip ${cls}">${txt}</span>`;});}
+    html+=`</div></div>`;
+  });
+  el.insertAdjacentHTML('beforeend',html);
+}
 
 // ============ SEARCH ============
 function searchAll(q){
@@ -819,7 +1047,23 @@ function setupEvents(){
   map.on('popupopen',e=>{
     const popup=e.popup,content=popup.getElement();
     if(!content)return;const inner=content.querySelector('.popup-inner');
-    if(!inner)return;const chip=inner.querySelector('.route-chip[data-key]');
+    if(!inner)return;
+    // 常用站星標
+    const favBtn=inner.querySelector('.fav-btn');
+    if(favBtn){
+      favBtn.addEventListener('click',ev=>{
+        ev.stopPropagation();
+        const k=favBtn.dataset.favkey,o=favBtn.dataset.op,sId=favBtn.dataset.stopid;
+        const st=(stopRoutesIndex[o]||{})[sId];
+        const nameTc=favBtn.closest('.popup-inner')?.querySelector('.stop-name')?.textContent||'';
+        const nameEn=favBtn.closest('.popup-inner')?.querySelector('.stop-en')?.textContent||'';
+        const nowFav=toggleFav(k,o,sId,nameTc,nameEn);
+        favBtn.classList.toggle('is-fav',nowFav);
+        favBtn.textContent=nowFav?'★':'☆';
+        showFavToast(nowFav);
+      });
+    }
+    const chip=inner.querySelector('.route-chip[data-key]');
     if(!chip)return;
     const op=chip.dataset.op,stopId=chip.dataset.stop,routes=(stopRoutesIndex[op]||{})[stopId]||[],key=`${op}_${stopId}`;
     inner.querySelectorAll('.route-chip[data-key]').forEach(c=>{c.addEventListener('click',()=>{
@@ -833,6 +1077,50 @@ function setupEvents(){
       selectedRoutes.set(`${o}_${sId}`,rts.map(r=>r.key||r.route));
       const nc=buildPopupContent(`${o}_${sId}`,'','',sId,o,rts,rts.map(r=>r.key||r.route),true);popup.setContent(nc);fetchEtas(sId,o,rts,`${o}_${sId}`);});});
     fetchEtas(stopId,op,routes,key);});}
+
+  // ============ FEATURES: 書籤 / 主題 / 離線 / PWA ============
+  // 常用站面板
+  document.getElementById('fc-fav').addEventListener('click',()=>{
+    const p=document.getElementById('fav-panel');
+    renderFavPanel();
+    p.classList.toggle('show');
+  });
+  document.getElementById('fav-close').addEventListener('click',()=>document.getElementById('fav-panel').classList.remove('show'));
+  // 深色模式切換
+  document.getElementById('fc-theme').addEventListener('click',()=>{
+    const dark=!document.body.classList.contains('dark');
+    applyTheme(dark);
+  });
+  // 資料舊化秒數更新
+  clearInterval(globalStaleTimer);
+  globalStaleTimer=setInterval(updateDataAgeBadge,10000);
+  // 離線偵測
+  window.addEventListener('offline',()=>{updateDataAgeBadge();});
+  window.addEventListener('online',()=>{updateDataAgeBadge();});
+  // PWA Service Worker
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{
+      navigator.serviceWorker.register('./sw.js').then(reg=>{
+        console.log('SW registered',reg.scope);
+      }).catch(err=>console.warn('SW register failed',err));
+    });
+  }
+
+// 書籤 toast
+let favToastTimer=null;
+function showFavToast(added){
+  let el=document.getElementById('fav-toast');
+  if(!el){
+    el=document.createElement('div');
+    el.id='fav-toast';
+    el.style.cssText='position:fixed;top:70px;right:12px;background:#333;color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;z-index:3000;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:opacity 0.3s;';
+    document.body.appendChild(el);
+  }
+  el.textContent=added?'⭐ 已加入常用站':'已移除書籤';
+  el.style.opacity='1';
+  clearTimeout(favToastTimer);
+  favToastTimer=setTimeout(()=>{el.style.opacity='0';},1500);
+}
 init();
 </script>
 </body>
