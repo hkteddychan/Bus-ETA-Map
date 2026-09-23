@@ -1,0 +1,42 @@
+name: Update Bus Data
+
+on:
+  schedule:
+    # every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch KMB / GMB / MTR data
+        run: python fetch_data.py
+
+      - name: Commit & push if changed
+        run: |
+          if [ -n "$(git status --porcelain kmb_data.json gmb_data.json mtr_data.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add kmb_data.json gmb_data.json mtr_data.json
+            git commit -m "chore: auto-update bus route data"
+            git push origin main
+            echo "Pushed"
+          else
+            echo "No data change"
+          fi
