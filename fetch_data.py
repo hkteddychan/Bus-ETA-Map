@@ -57,7 +57,28 @@ KMB_BASE = "https://data.etabus.gov.hk/v1/transport/kmb"
 LWB_BASE = "https://data.etabus.gov.hk/v1/transport/lwb"
 
 
-def _load_existing(name: str) -> dict | None:
+def _load_existing(name: str, require_keys: tuple[str, ...] = ()) -> dict | None:
+    """Read the previously committed version of `name` from git so we can
+    carry forward keys whose upstream endpoint has sunset (e.g. LWB).
+
+    `require_keys` — only accept a ref that contains all of these keys
+    non-empty (used so we skip HEAD if its first-time workflow commit
+    hadn't yet merged the carried data back in)."""
+    import subprocess
+
+    refs = ["HEAD", "HEAD~1", "HEAD~2", "HEAD~3", "HEAD~4", "HEAD~5"]
+    for ref in refs:
+        try:
+            out = subprocess.run(
+                ["git", "show", f"{ref}:{name}"],
+                cwd=HERE, capture_output=True, check=True, text=True,
+            )
+            data = json.loads(out.stdout)
+            if require_keys and not all(data.get(k) for k in require_keys):
+                continue
+            return data
+        except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
+            continue
     path = os.path.join(HERE, name)
     if not os.path.exists(path):
         return None
@@ -71,8 +92,8 @@ def fetch_kmb() -> dict:
     routes_raw = _get_json(f"{KMB_BASE}/route")
     stops_raw = _get_json(f"{KMB_BASE}/stop")
     # LWB endpoint (data.etabus.gov.hk/v1/transport/lwb/*) returns 422 since
-    # the operator sunset; preserve the last good copy from disk.
-    lwb_existing = _load_existing("kmb_data.json") or {}
+    # the operator sunset; preserve the last good copy from a recent commit.
+    lwb_existing = _load_existing("kmb_data.json", require_keys=("lwb_routes",)) or {}
 
     out: dict = {
         "refreshed_at": _now_iso(),
